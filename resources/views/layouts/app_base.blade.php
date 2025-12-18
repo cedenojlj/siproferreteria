@@ -21,11 +21,7 @@
         @yield('header')
     </header>
 
-    <div class="d-flex flex-grow-1">
-        <!-- Sidebar -->
-        <aside class="d-none d-md-block bg-dark text-white p-3" style="width: 250px;">
-            @yield('sidebar')
-        </aside>
+    <div class="d-flex flex-grow-1">      
 
         <!-- Main Content -->
         <main class="flex-grow-1 p-3">
