@@ -14,6 +14,7 @@
     <!-- Styles -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     @yield('styles')
+    @livewireStyles
 </head>
 <body class="d-flex flex-column min-vh-100">
     <!-- Header -->
@@ -35,5 +36,6 @@
 
     <!-- Scripts -->
     @yield('scripts')
+    @livewireScripts
 </body>
 </html>

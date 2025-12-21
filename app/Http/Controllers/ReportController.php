@@ -1,0 +1,92 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Sale;
+use App\Models\Purchase;
+use App\Models\Product;
+use App\Models\InventoryMovement;
+use Barryvdh\DomPDF\Facade\Pdf;
+
+class ReportController extends Controller
+{
+     // Reporte de Ventas
+    public function salesReport(Request $request)
+    {
+        $query = Sale::with(['customer', 'seller', 'cashier', 'saleItems.product'])
+            ->where('status', 'completed');
+            
+        if ($request->has('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        
+        if ($request->has('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+        
+        $sales = $query->orderBy('created_at', 'desc')->get();
+        
+        $pdf = Pdf::loadView('reports.sales', compact('sales'));
+        
+        return $pdf->download('reporte-ventas-' . date('Y-m-d') . '.pdf');
+    }
+    
+    // Reporte de Compras
+    public function purchasesReport(Request $request)
+    {
+        $query = Purchase::with(['supplier', 'user', 'purchaseItems.product'])
+            ->where('status', 'received');
+            
+        if ($request->has('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        
+        if ($request->has('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+        
+        $purchases = $query->orderBy('created_at', 'desc')->get();
+        
+        $pdf = Pdf::loadView('reports.purchases', compact('purchases'));
+        
+        return $pdf->download('reporte-compras-' . date('Y-m-d') . '.pdf');
+    }
+    
+    // Reporte de Inventario
+    public function inventoryReport()
+    {
+        $products = Product::with(['category', 'unitMeasure'])
+            ->where('is_active', true)
+            ->orderBy('current_stock', 'asc')
+            ->get();
+            
+        $pdf = Pdf::loadView('reports.inventory', compact('products'));
+        
+        return $pdf->download('reporte-inventario-' . date('Y-m-d') . '.pdf');
+    }
+    
+    // Reporte de Productos Más Vendidos
+    public function topProductsReport(Request $request)
+    {
+        $query = Product::with(['category'])
+            ->whereHas('saleItems')
+            ->withCount(['saleItems as total_sold' => function($query) use ($request) {
+                $query->selectRaw('SUM(quantity)');
+                if ($request->has('start_date')) {
+                    $query->whereDate('created_at', '>=', $request->start_date);
+                }
+                if ($request->has('end_date')) {
+                    $query->whereDate('created_at', '<=', $request->end_date);
+                }
+            }])
+            ->orderBy('total_sold', 'desc')
+            ->limit(20);
+            
+        $products = $query->get();
+        
+        $pdf = Pdf::loadView('reports.top-products', compact('products'));
+        
+        return $pdf->download('productos-mas-vendidos-' . date('Y-m-d') . '.pdf');
+    }
+}
