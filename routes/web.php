@@ -26,9 +26,17 @@ Route::get('/logout', function () {
 
 Route::middleware(['auth', 'web'])->group(function () {
     Route::get('/pos', \App\Livewire\PointOfSale::class)->name('pos'); 
-    Route::get('/products', \App\Livewire\ProductManager::class)->name('products'); 
+    Route::get('/productsmanager', \App\Livewire\ProductManager::class)->name('productsmanager'); 
     Route::get('/reports/sales', [ReportController::class, 'salesReport'])->name('reports.sales');
     Route::get('/reports/purchases', [ReportController::class, 'purchasesReport'])->name('reports.purchases');
     Route::get('/reports/inventory', [ReportController::class, 'inventoryReport'])->name('reports.inventory');
     Route::get('/reports/top-products', [ReportController::class, 'topProductsReport'])->name('reports.top-products');
+    //Route::get('/company', \App\Livewire\Company\EditCompany::class)->name('company.edit');
+
+    Route::get('/company', function () {
+        return view('company');
+    })->name('company.edit');
+
+    Route::get('/exchange-rates', \App\Livewire\ExchangeRateManager::class)->name('exchange-rates');
+    
 });
