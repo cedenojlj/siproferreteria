@@ -36,7 +36,6 @@ Route::middleware(['auth', 'web'])->group(function () {
     Route::get('/company', function () {
         return view('company');
     })->name('company.edit');
-
-    Route::get('/exchange-rates', \App\Livewire\ExchangeRateManager::class)->name('exchange-rates');
+    
     
 });
