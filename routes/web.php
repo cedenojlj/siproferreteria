@@ -66,21 +66,13 @@ Route::middleware(['auth', 'web'])->group(function () {
         return view('exchange_rate');
     })->name('exchange_rates');
 
+     Route::get('/ventas', function () {
+        return view('ventas');
+    })->name('ventas');     
 
-
-
-
-     Route::get('/sales', function () {
-        return view('sales');
-    })->name('sales');
-
-     Route::get('/purchases', function () {
-        return view('purchases');
-    })->name('purchases');
-
-     Route::get('/inventory-movements', function () {
+     Route::get('/mvt_inventory', function () {
         return view('inventory_movements');
-    })->name('inventory-movements');
+    })->name('mvt_inventory');
 
      Route::get('/refunds', function () {
         return view('refunds');
@@ -88,15 +80,8 @@ Route::middleware(['auth', 'web'])->group(function () {
 
      Route::get('/payments', function () {
         return view('payments');
-    })->name('payments');
-
-    Route::get('/customers', \App\Livewire\CustomerCrud::class)->name('customers.index');
-    Route::get('/suppliers', \App\Livewire\SupplierCrud::class)->name('suppliers.index');
-    Route::get('/sales', \App\Livewire\SaleCrud::class)->name('sales.index');
-    Route::get('/purchases', \App\Livewire\PurchaseCrud::class)->name('purchases.index');
-    Route::get('/inventory-movements', \App\Livewire\InventoryMovementCrud::class)->name('inventory-movements.index');
-    Route::get('/refunds', \App\Livewire\RefundCrud::class)->name('refunds.index');
-    Route::get('/payments', \App\Livewire\PaymentCrud::class)->name('payments.index');
+    })->name('payments');     
+      
 
     Route::get('/management/roles-permissions', \App\Livewire\RolePermissionManager::class)
         ->middleware('can:manage_roles')

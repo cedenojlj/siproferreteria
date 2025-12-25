@@ -50,6 +50,30 @@
         </a>
     </li>
 
+    <li class="nav-item">
+        <a class="nav-link text-white" href="{{ route('ventas') }}">
+            <i class="bi bi-truck"></i> Ventas
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link text-white" href="{{ route('mvt_inventory') }}">
+            <i class="bi bi-arrow-left-right"></i> Movimientos de Inventario
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link text-white" href="{{ route('refunds') }}">
+            <i class="bi bi-arrow-left-right"></i> Devoluciones
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link text-white" href="{{ route('payments') }}">
+            <i class="bi bi-credit-card"></i> Pagos
+        </a>
+    </li>
+
     <li class="nav-item mt-2">
         <h6 class="text-secondary ps-3">Configuración</h6>
     </li>

@@ -1,6 +1,4 @@
-@extends('layouts.app')
 
-@section('content')
 <div class="container mt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestión de Ventas</h2>
@@ -226,4 +224,4 @@
     </div>
     @endif
 </div>
-@endsection
+

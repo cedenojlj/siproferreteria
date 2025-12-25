@@ -1,168 +1,116 @@
+<div class="container-fluid">
+    <div class="h3 mb-4 text-gray-800">
+        <h2>Gestión de Tasas de Cambio</h2>
+    </div>
 
-<div>
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header pb-0">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0">Gestión de Tasas de Cambio</h6>
-                            <button wire:click="create()" class="btn btn-primary btn-sm">Crear Nueva Tasa</button>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-md-4">
-                                <input wire:model.live.debounce.300ms="search" type="text" class="form-control" placeholder="Buscar por tasa o fuente...">
+    @if (session()->has('message'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('message') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <button wire:click="create()" class="btn btn-primary"><i class="fas fa-plus-circle"></i> Crear Nueva Tasa</button>
+
+            <div class="w-50">
+                <input type="text" class="form-control" placeholder="Buscar por tasa o fuente..." wire:model.live.debounce.300ms="search">
+            </div>
+        </div>
+        <div class="card-body">
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Tasa</th>
+                            <th>Fuente</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($rates as $rate)
+                            <tr>
+                                <td>{{ $rate->id }}</td>
+                                <td>{{ $rate->created_at->format('d/m/Y H:i') }}</td>
+                                <td>{{ number_format($rate->rate, 2) }}</td>
+                                <td>{{ $rate->source }}</td>
+                                <td>
+                                    <span class="badge bg-{{ $rate->is_active ? 'success' : 'secondary' }}" wire:click="toggleStatus({{ $rate->id }})" style="cursor: pointer;">
+                                        {{ $rate->is_active ? 'Activo' : 'Inactivo' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button wire:click="edit({{ $rate->id }})"
+                                        class="btn btn-warning btn-sm" title="Editar"><i class="fas fa-edit"></i></button>
+                                    <button wire:click="delete({{ $rate->id }})" wire:confirm="¿Estás seguro de que quieres eliminar esta Tasa?"
+                                        class="btn btn-sm btn-danger" title="Eliminar"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center">No hay tasas de cambio registradas.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex justify-content-center">
+                {{ $rates->links() }}
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal de Creación/Edición -->
+    @if ($isModalOpen)
+        <div class="modal d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ $rate_id ? 'Editar Tasa de Cambio' : 'Crear Tasa de Cambio' }}</h5>
+                        <button type="button" class="btn-close" wire:click="closeModal" aria-label="Close"></button>
+                    </div>
+                    <form wire:submit.prevent="{{ $rate_id ? 'update' : 'store' }}">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="rate" class="form-label">Tasa:</label>
+                                <input type="number" step="0.0001" class="form-control @error('rate') is-invalid @enderror"
+                                    id="rate" placeholder="Ingrese la tasa" wire:model="rate">
+                                @error('rate')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="mb-3">
+                                <label for="source" class="form-label">Fuente:</label>
+                                <input type="text" class="form-control @error('source') is-invalid @enderror"
+                                    id="source" placeholder="Ingrese la fuente" wire:model="source">
+                                @error('source')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="is_active" wire:model="is_active">
+                                <label for="is_active" class="form-check-label">Activo</label>
+                                @error('is_active')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
-                    </div>
-                    <div class="card-body px-0 pt-0 pb-2">
-                         @if (session()->has('message'))
-                            <div class="alert alert-success m-3">{{ session('message') }}</div>
-                        @endif
-                        <div class="table-responsive p-0">
-                            <table class="table align-items-center mb-0">
-                                <thead>
-                                    <tr>
-                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7" wire:click="sortBy('rate')">
-                                            Tasa <i class="fas fa-sort"></i>
-                                        </th>
-                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2" wire:click="sortBy('source')">
-                                            Fuente <i class="fas fa-sort"></i>
-                                        </th>
-                                        <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7" wire:click="sortBy('is_active')">
-                                            Estado <i class="fas fa-sort"></i>
-                                        </th>
-                                        <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7" wire:click="sortBy('created_at')">
-                                            Creado <i class="fas fa-sort"></i>
-                                        </th>
-                                        <th class="text-secondary opacity-7"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($rates as $rate)
-                                    <tr>
-                                        <td>
-                                            <p class="text-xs font-weight-bold mb-0">{{ number_format($rate->rate, 4) }}</p>
-                                        </td>
-                                        <td>
-                                            <p class="text-xs font-weight-bold mb-0">{{ $rate->source }}</p>
-                                        </td>
-                                        <td class="align-middle text-center text-sm">
-                                            <span class="badge badge-sm bg-gradient-{{ $rate->is_active ? 'success' : 'secondary' }}" wire:click="toggleStatus({{ $rate->id }})" style="cursor: pointer;">
-                                                {{ $rate->is_active ? 'Activo' : 'Inactivo' }}
-                                            </span>
-                                        </td>
-                                        <td class="align-middle text-center">
-                                            <span class="text-secondary text-xs font-weight-bold">{{ $rate->created_at->format('d/m/Y') }}</span>
-                                        </td>
-                                        <td class="align-middle">
-                                            <button wire:click="edit({{ $rate->id }})" class="btn btn-sm btn-info mb-0">Editar</button>
-                                            <button wire:click="confirmDelete({{ $rate->id }})" class="btn btn-sm btn-danger mb-0">Eliminar</button>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" wire:click="closeModal">Cancelar</button>
+                            <button type="submit"
+                                class="btn btn-primary">{{ $rate_id ? 'Actualizar' : 'Guardar' }}</button>
                         </div>
-                        <div class="mt-3 px-4">
-                            {{ $rates->links() }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    
-
-
-
-
-
-
-
-
-    <!-- Create/Edit Modal -->
-    <div class="modal fade" id="formModal" tabindex="-1" role="dialog" aria-labelledby="formModalLabel" aria-hidden="true" wire:ignore.self>
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="formModalLabel">{{ $modalTitle }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form wire:submit.prevent="save">
-                        <div class="mb-3">
-                            <label for="rate" class="form-label">Tasa</label>
-                            <input type="number" step="0.0001" class="form-control" id="rate" wire:model.defer="rate">
-                            @error('rate') <span class="text-danger">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="mb-3">
-                            <label for="source" class="form-label">Fuente</label>
-                            <input type="text" class="form-control" id="source" wire:model.defer="source">
-                            @error('source') <span class="text-danger">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="is_active" wire:model.defer="is_active">
-                            <label class="form-check-label" for="is_active">
-                                Activo
-                            </label>
-                        </div>
-                         @error('is_active') <span class="text-danger">{{ $message }}</span> @enderror
                     </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="button" class="btn btn-primary" wire:click.prevent="save()">Guardar Cambios</button>
-                </div>
             </div>
         </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true" wire:ignore.self>
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>¿Estás seguro de que quieres eliminar esta tasa de cambio?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger" wire:click.prevent="delete()">Eliminar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    @push('scripts')
-    <script>
-        document.addEventListener('livewire:initialized', () => {
-            const formModal = new bootstrap.Modal(document.getElementById('formModal'));
-            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-
-            @this.on('show-modal', () => {
-                formModal.show();
-            });
-
-            @this.on('hide-modal', () => {
-                formModal.hide();
-            });
-            
-            @this.on('show-delete-modal', () => {
-                deleteModal.show();
-            });
-
-            @this.on('hide-delete-modal', () => {
-                deleteModal.hide();
-            });
-        });
-    </script>
-    @endpush
-
+    @endif
 </div>
 

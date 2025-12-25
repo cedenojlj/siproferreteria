@@ -4,7 +4,7 @@
 <div class="container mt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestión de Compras</h2>
-        <button wire:click="create()" class="btn btn-primary">Crear Nueva Compra</button>
+        <button wire:click="create()" class="btn btn-primary"><i class="fas fa-plus-circle"></i> Crear Nueva Compra</button>
     </div>
 
     @if (session()->has('message'))

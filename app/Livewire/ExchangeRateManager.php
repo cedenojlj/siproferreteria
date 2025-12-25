@@ -4,25 +4,19 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\ExchangeRate;
+use Illuminate\Support\Facades\Auth;
 use Livewire\WithPagination;
 
 class ExchangeRateManager extends Component
 {
     use WithPagination;
 
-    protected $paginationTheme = 'bootstrap';
+    // Propiedades del modelo
+    public $rate_id, $rate, $source, $is_active;
 
-    public $rateId;
-    public $rate;
-    public $source;
-    public $is_active;
-
-    public $showModal = false;
-    public $modalTitle = '';
-    public $showDeleteModal = false;
+    // Propiedades de control
+    public $isModalOpen = false;
     public $search = '';
-    public $sortField = 'created_at';
-    public $sortDirection = 'desc';
 
     protected function rules()
     {
@@ -33,118 +27,104 @@ class ExchangeRateManager extends Component
         ];
     }
 
-    public function mount()
-    {
-        $this->is_active = true;
-        $this->source = 'MANUAL';
-    }
-
     public function render()
     {
-        $query = ExchangeRate::where('company_id', auth()->user()->company_id);
-
-        if ($this->search) {
-            $query->where('rate', 'like', '%' . $this->search . '%')
-                  ->orWhere('source', 'like', '%' . $this->search . '%');
-        }
-
-        $rates = $query->orderBy($this->sortField, $this->sortDirection)->paginate(10);
+        $company_id = Auth::user()->company_id;
+        $rates = ExchangeRate::where('company_id', $company_id)
+            ->where(function($query) {
+                $query->where('rate', 'like', '%' . $this->search . '%')
+                      ->orWhere('source', 'like', '%' . $this->search . '%');
+            })->orderBy('id', 'desc')->paginate(10);
 
         return view('livewire.exchange-rate-manager', [
             'rates' => $rates,
         ]);
     }
 
-    public function sortBy($field)
-    {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortField = $field;
-            $this->sortDirection = 'asc';
-        }
-    }
-
     public function create()
     {
-        $this->resetForm();
-        $this->modalTitle = 'Crear Nueva Tasa de Cambio';
-        $this->showModal = true;
-        $this->dispatch('show-modal');
+        $this->resetInputFields();
+        $this->openModal();
+    }
+
+    public function openModal()
+    {
+        $this->isModalOpen = true;
+    }
+
+    public function closeModal()
+    {
+        $this->isModalOpen = false;
+    }
+
+    private function resetInputFields()
+    {
+        $this->reset(['rate_id', 'rate', 'source', 'is_active']);
+        $this->is_active = true; // Valor por defecto
+        $this->source = 'MANUAL'; // Valor por defecto
+    }
+
+    public function store()
+    {
+        $this->validate();
+
+        ExchangeRate::create([
+            'company_id' => Auth::user()->company_id,
+            'rate' => $this->rate,
+            'source' => $this->source,
+            'is_active' => $this->is_active,
+        ]);
+
+        session()->flash('message', 'Tasa de cambio creada exitosamente.');
+        $this->closeModal();
+        $this->resetInputFields();
     }
 
     public function edit($id)
     {
-        $rate = ExchangeRate::findOrFail($id);
-        $this->rateId = $rate->id;
+        $company_id = Auth::user()->company_id;
+        $rate = ExchangeRate::where('company_id', $company_id)->findOrFail($id);
+
+        $this->rate_id = $id;
         $this->rate = $rate->rate;
         $this->source = $rate->source;
         $this->is_active = $rate->is_active;
 
-        $this->modalTitle = 'Editar Tasa de Cambio';
-        $this->showModal = true;
-        $this->dispatch('show-modal');
+        $this->openModal();
     }
 
-    public function save()
+    public function update()
     {
         $this->validate();
 
-        $data = [
-            'company_id' => auth()->user()->company_id,
-            'rate' => $this->rate,
-            'source' => $this->source,
-            'is_active' => $this->is_active,
-        ];
-
-        if ($this->rateId) {
-            $rate = ExchangeRate::find($this->rateId);
-            $rate->update($data);
+        if ($this->rate_id) {
+            $company_id = Auth::user()->company_id;
+            $rate = ExchangeRate::where('company_id', $company_id)->findOrFail($this->rate_id);
+            $rate->update([
+                'rate' => $this->rate,
+                'source' => $this->source,
+                'is_active' => $this->is_active,
+            ]);
+            
             session()->flash('message', 'Tasa de cambio actualizada exitosamente.');
-        } else {
-            ExchangeRate::create($data);
-            session()->flash('message', 'Tasa de cambio creada exitosamente.');
+            $this->closeModal();
+            $this->resetInputFields();
         }
-
-        $this->closeModal();
     }
 
-    public function confirmDelete($id)
+    public function delete($id)
     {
-        $this->rateId = $id;
-        $this->showDeleteModal = true;
-        $this->dispatch('show-delete-modal');
-    }
-
-    public function delete()
-    {
-        ExchangeRate::find($this->rateId)->delete();
-        $this->showDeleteModal = false;
+        $company_id = Auth::user()->company_id;
+        ExchangeRate::where('company_id', $company_id)->findOrFail($id)->delete();
         session()->flash('message', 'Tasa de cambio eliminada exitosamente.');
-        $this->dispatch('hide-delete-modal');
     }
-
+    
     public function toggleStatus($id)
     {
-        $rate = ExchangeRate::find($id);
+        $company_id = Auth::user()->company_id;
+        $rate = ExchangeRate::where('company_id', $company_id)->findOrFail($id);
         $rate->is_active = !$rate->is_active;
         $rate->save();
         session()->flash('message', 'Estado de la tasa de cambio actualizado.');
-    }
-    
-    public function closeModal()
-    {
-        $this->showModal = false;
-        $this->showDeleteModal = false;
-        $this->resetForm();
-        $this->dispatch('hide-modal');
-        $this->dispatch('hide-delete-modal');
-    }
-
-    public function resetForm()
-    {
-        $this->reset(['rateId', 'rate', 'source', 'is_active']);
-        $this->is_active = true;
-        $this->source = 'MANUAL';
     }
 }

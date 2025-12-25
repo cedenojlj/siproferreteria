@@ -12,7 +12,7 @@
 
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <button wire:click="create()" class="btn btn-primary">Crear Nuevo Proveedor</button>
+            <button wire:click="create()" class="btn btn-primary"><i class="fas fa-plus-circle"></i> Crear Nuevo Proveedor</button>
 
             <div class="w-50">
                 <input type="text" class="form-control" placeholder="Buscar proveedores..." wire:model.live.debounce.300ms="search">
