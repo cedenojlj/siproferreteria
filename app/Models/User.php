@@ -100,4 +100,58 @@ class User extends Authenticatable
     {
         return $this->hasMany(Payment::class, 'user_id');
     }
+
+    // Métodos personalizados para Roles y Permisos (sin Spatie)
+
+    /**
+     * Sincroniza los roles del usuario.
+     * @param array $roleIds
+     */
+    public function syncRoles(array $roleIds): void
+    {
+        $this->roles()->sync($roleIds);
+    }
+
+    /**
+     * Sincroniza los permisos directos del usuario.
+     * @param array $permissionIds
+     */
+    public function syncPermissions(array $permissionIds): void
+    {
+        $this->permissions()->sync($permissionIds);
+    }
+
+    /**
+     * Asigna un rol al usuario.
+     * @param Role $role
+     */
+    public function assignRole(Role $role): void
+    {
+        $this->roles()->syncWithoutDetaching($role->id);
+    }
+
+    /**
+     * Verifica si el usuario tiene un permiso específico, ya sea directamente o a través de sus roles.
+     * @param string $permissionName
+     * @return bool
+     */
+    public function hasPermissionTo(string $permissionName): bool
+    {
+        // 1. Verificar permisos directos
+        if ($this->permissions()->where('name', $permissionName)->exists()) {
+            return true;
+        }
+
+        // 2. Verificar permisos a través de los roles
+        // Carga los roles con sus permisos anidados
+        $roles = $this->roles()->with('permissions')->get();
+
+        foreach ($roles as $role) {
+            if ($role->permissions()->where('name', $permissionName)->exists()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
