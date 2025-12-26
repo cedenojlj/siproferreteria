@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ReportController;
 use App\Livewire\ProductManager;
-
+use App\Models\Purchase;
 
 Route::get('/', function () {
     return view('welcome');
@@ -81,7 +81,11 @@ Route::middleware(['auth', 'web'])->group(function () {
      Route::get('/payments', function () {
         return view('payments');
     })->name('payments');     
-      
+    
+    Route::get('/purchases', function () {
+        return view('compras');
+    })->name('compras');     
+
 
     Route::get('/management/roles-permissions', \App\Livewire\RolePermissionManager::class)
         ->middleware('can:manage_roles')

@@ -74,6 +74,12 @@
         </a>
     </li>
 
+    <li class="nav-item">
+        <a class="nav-link text-white" href="{{ route('compras') }}">
+            <i class="bi bi-credit-card"></i> Compras
+        </a>
+    </li>
+
     <li class="nav-item mt-2">
         <h6 class="text-secondary ps-3">Configuración</h6>
     </li>
