@@ -257,7 +257,7 @@ class PurchaseCrud extends Component
                 // Update stock if purchase is received
                 if ($this->status === 'received') {
                     $product = Product::find($item['product_id']);
-                    $product->increment('stock', $item['quantity']);
+                    $product->increment('current_stock', $item['quantity']);
                 }
             }
         });
@@ -313,7 +313,7 @@ class PurchaseCrud extends Component
             // Revert stock if purchase was received
             if ($purchase->status === 'received') {
                 foreach ($purchase->purchaseItems as $item) {
-                    Product::find($item->product_id)->decrement('stock', $item->quantity);
+                    Product::find($item->product_id)->decrement('current_stock', $item->quantity);
                 }
             }
 
@@ -341,7 +341,7 @@ class PurchaseCrud extends Component
 
                 // Update stock if new status is received
                 if ($this->status === 'received') {
-                    Product::find($item['product_id'])->increment('stock', $item['quantity']);
+                    Product::find($item['product_id'])->increment('current_stock', $item['quantity']);
                 }
             }
         });
@@ -362,7 +362,7 @@ class PurchaseCrud extends Component
             // Revert stock if purchase was received
             if ($purchase->status === 'received') {
                 foreach ($purchase->purchaseItems as $item) {
-                    Product::find($item->product_id)->decrement('stock', $item->quantity);
+                    Product::find($item->product_id)->decrement('current_stock', $item->quantity);
                 }
             }
 
