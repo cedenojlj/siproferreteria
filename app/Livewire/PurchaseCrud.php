@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Models\InventoryMovement;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PurchaseCrud extends Component
 {
@@ -431,5 +432,28 @@ class PurchaseCrud extends Component
         });
 
         session()->flash('message', 'Compra eliminada exitosamente.');
+    }
+
+    public function generatePdfReport()
+    {
+        $company_id = Auth::user()->company_id;
+        $purchases = Purchase::where('company_id', $company_id)
+            ->with('supplier')
+            ->where(function($query) {
+                $query->where('invoice_number', 'like', '%' . $this->search . '%')
+                      ->orWhereHas('supplier', function($q) {
+                          $q->where('name', 'like', '%' . $this->search . '%');
+                      });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $company = Auth::user()->company;
+
+        $pdf = Pdf::loadView('reports.purchases_pdf', compact('purchases', 'company'));
+        
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'reporte-compras.pdf');
     }
 }

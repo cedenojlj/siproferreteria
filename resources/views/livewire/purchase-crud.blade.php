@@ -12,7 +12,18 @@
 
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <button wire:click="create()" class="btn btn-primary">Crear Nueva Compra</button>
+            <div>
+                <button wire:click="create()" class="btn btn-primary">Crear Nueva Compra</button>
+                <button wire:click="generatePdfReport" class="btn btn-info" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="generatePdfReport">
+                        <i class="fas fa-download"></i> Descargar PDF
+                    </span>
+                    <span wire:loading wire:target="generatePdfReport">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        Generando...
+                    </span>
+                </button>
+            </div>
             <div class="w-50">
                 <input type="text" class="form-control" placeholder="Buscar por N° de factura o proveedor..." wire:model.live.debounce.300ms="search">
             </div>
