@@ -55,7 +55,8 @@ class PurchaseCrud extends Component
                                   ->orderBy('created_at', 'desc')
                                   ->first();
         if ($latestRate) {
-            $this->exchange_rate = $latestRate->rate;
+            //quiero que tenga dos decimales
+            $this->exchange_rate = number_format($latestRate->rate, 2);
         }
     }
 
@@ -81,6 +82,13 @@ class PurchaseCrud extends Component
     public function create()
     {
         $this->resetInputFields();
+        $latestRate = ExchangeRate::where('company_id', Auth::user()->company_id)
+            ->where('is_active', true)
+            ->orderBy('created_at', 'desc')
+            ->first();
+        if ($latestRate) {
+            $this->exchange_rate = $latestRate->rate;
+        }
         $this->openModal();
     }
 
@@ -195,7 +203,7 @@ class PurchaseCrud extends Component
     {
         $this->reset([
             'purchase_id', 'invoice_number', 'supplier_id',
-            'payment_currency', 'exchange_rate', 'subtotal', 'tax', 'total',
+            'payment_currency', 'subtotal', 'tax', 'total',
             'status', 'notes', 'items', 'barcode'
         ]);
         $this->subtotal = 0;
