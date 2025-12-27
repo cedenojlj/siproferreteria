@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Supplier;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\InventoryMovement;
 use Illuminate\Support\Facades\DB;
 
 class PurchaseCrud extends Component
@@ -227,6 +228,27 @@ class PurchaseCrud extends Component
         $this->items = [];
     }
 
+    private function recordInventoryMovement(Purchase $purchase, array $item, string $movementType, int $quantity, string $notes)
+    {
+        InventoryMovement::create([
+            'company_id' => $purchase->company_id,
+            'product_id' => $item['product_id'],
+            'user_id' => Auth::id(),
+            'movement_type' => $movementType,
+            'quantity' => $quantity,
+            'reference_id' => $purchase->id,
+            'reference_type' => 'purchase',
+            'notes' => $notes,
+        ]);
+
+        $product = Product::find($item['product_id']);
+        if ($movementType === 'in') {
+            $product->increment('current_stock', $quantity);
+        } elseif ($movementType === 'out') {
+            $product->decrement('current_stock', $quantity);
+        }
+    }
+
     public function store()
     {
         $this->validate();
@@ -254,10 +276,8 @@ class PurchaseCrud extends Component
                     'subtotal' => floatval($item['quantity']) * floatval($item['price']),
                 ]);
 
-                // Update stock if purchase is received
                 if ($this->status === 'received') {
-                    $product = Product::find($item['product_id']);
-                    $product->increment('current_stock', $item['quantity']);
+                    $this->recordInventoryMovement($purchase, $item, 'in', $item['quantity'], 'Recepción de compra #' . $purchase->invoice_number);
                 }
             }
         });
@@ -305,18 +325,15 @@ class PurchaseCrud extends Component
         }
 
         DB::transaction(function () {
-            $company_id = Auth::user()->company_id;
-            $purchase = Purchase::where('company_id', $company_id)
-                                ->with('purchaseItems.product')
-                                ->findOrFail($this->purchase_id);
+            $purchase = Purchase::with('purchaseItems')->findOrFail($this->purchase_id);
+            $originalStatus = $purchase->status;
 
-            // Revert stock if purchase was received
-            if ($purchase->status === 'received') {
-                foreach ($purchase->purchaseItems as $item) {
-                    Product::find($item->product_id)->decrement('current_stock', $item->quantity);
-                }
+            // Handle inventory changes
+            if ($originalStatus === 'received' || $this->status === 'received') {
+                $this->adjustInventoryOnUpdate($purchase);
             }
 
+            // Update purchase details
             $purchase->update([
                 'invoice_number' => $this->invoice_number,
                 'supplier_id' => $this->supplier_id,
@@ -329,7 +346,7 @@ class PurchaseCrud extends Component
                 'notes' => $this->notes,
             ]);
 
-            // Delete old items and create new ones
+            // Sync purchase items
             $purchase->purchaseItems()->delete();
             foreach ($this->items as $item) {
                 $purchase->purchaseItems()->create([
@@ -338,11 +355,6 @@ class PurchaseCrud extends Component
                     'unit_price' => $item['price'],
                     'subtotal' => floatval($item['quantity']) * floatval($item['price']),
                 ]);
-
-                // Update stock if new status is received
-                if ($this->status === 'received') {
-                    Product::find($item['product_id'])->increment('current_stock', $item['quantity']);
-                }
             }
         });
 
@@ -351,18 +363,67 @@ class PurchaseCrud extends Component
         $this->resetInputFields();
     }
 
+    private function adjustInventoryOnUpdate(Purchase $purchase)
+    {
+        $originalItems = $purchase->purchaseItems->keyBy('product_id');
+        $newItems = collect($this->items)->keyBy('product_id');
+        $originalStatus = $purchase->status;
+        $newStatus = $this->status;
+
+        // Case 1: Purchase status changes FROM 'received' TO something else
+        if ($originalStatus === 'received' && $newStatus !== 'received') {
+            foreach ($originalItems as $item) {
+                $this->recordInventoryMovement($purchase, $item->toArray(), 'out', $item->quantity, 'Cancelación/reversión de compra #' . $purchase->invoice_number);
+            }
+            return;
+        }
+
+        // Case 2: Purchase status changes TO 'received' FROM something else
+        if ($originalStatus !== 'received' && $newStatus === 'received') {
+            foreach ($newItems as $item) {
+                $this->recordInventoryMovement($purchase, $item, 'in', $item['quantity'], 'Recepción de compra (actualizada) #' . $purchase->invoice_number);
+            }
+            return;
+        }
+
+        // Case 3: Purchase status was and remains 'received'
+        if ($originalStatus === 'received' && $newStatus === 'received') {
+            // Products removed from the purchase
+            $removedItems = $originalItems->diffKeys($newItems);
+            foreach ($removedItems as $item) {
+                $this->recordInventoryMovement($purchase, $item->toArray(), 'out', $item->quantity, 'Artículo eliminado de compra #' . $purchase->invoice_number);
+            }
+
+            // Products added to the purchase
+            $addedItems = $newItems->diffKeys($originalItems);
+            foreach ($addedItems as $item) {
+                $this->recordInventoryMovement($purchase, $item, 'in', $item['quantity'], 'Artículo agregado a compra #' . $purchase->invoice_number);
+            }
+
+            // Products with changed quantity
+            $persistedItems = $originalItems->intersectByKeys($newItems);
+            foreach ($persistedItems as $originalItem) {
+                $newItem = $newItems[$originalItem->product_id];
+                $quantityDiff = $newItem['quantity'] - $originalItem->quantity;
+
+                if ($quantityDiff > 0) {
+                    $this->recordInventoryMovement($purchase, (array)$newItem, 'in', $quantityDiff, 'Ajuste de cantidad en compra #' . $purchase->invoice_number);
+                } elseif ($quantityDiff < 0) {
+                    $this->recordInventoryMovement($purchase, (array)$newItem, 'out', abs($quantityDiff), 'Ajuste de cantidad en compra #' . $purchase->invoice_number);
+                }
+            }
+        }
+    }
+
+
     public function delete($id)
     {
         DB::transaction(function () use ($id) {
-            $company_id = Auth::user()->company_id;
-            $purchase = Purchase::where('company_id', $company_id)
-                                ->with('purchaseItems')
-                                ->findOrFail($id);
+            $purchase = Purchase::with('purchaseItems')->findOrFail($id);
 
-            // Revert stock if purchase was received
             if ($purchase->status === 'received') {
                 foreach ($purchase->purchaseItems as $item) {
-                    Product::find($item->product_id)->decrement('current_stock', $item->quantity);
+                    $this->recordInventoryMovement($purchase, $item->toArray(), 'out', $item->quantity, 'Eliminación de compra #' . $purchase->invoice_number);
                 }
             }
 
