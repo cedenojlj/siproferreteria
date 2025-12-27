@@ -1,167 +1,129 @@
-# Plan de Implementación de Plantilla Base 'app' en Laravel 12
+# Plan de Implementación: Componente de Punto de Venta (POS)
 
-**Objetivo:** Crear una plantilla base `app.blade.php` robusta y moderna, utilizando Bootstrap 5, herencia de plantillas de Blade, con sidebar, header, y un layout de dashboard que sea responsive y profesional, inspirándose en AdminLTE sin usar Service Providers ni middleware para la plantilla en sí.
+El objetivo es construir un componente de una sola página, altamente interactivo, que sirva como interfaz principal para la creación de ventas, utilizando **Livewire**.
 
 ---
 
-## 1. Configuración Inicial y Dependencias (Bootstrap 5)
+### **Fase 1: Fundamentos y Backend**
 
-*   **Verificar Laravel:** Asegurarse de que el proyecto está en Laravel 12.
+En esta fase, prepararemos todo lo necesario en el lado del servidor antes de construir la interfaz.
 
-*   **Instalar Bootstrap 5:**
-    *   Instalar Bootstrap 5 y Popper.js vía npm:
-        ```bash
-        npm install bootstrap@5.3.0 popper.js
-        ```
-    *   Configurar `resources/js/app.js` para importar Bootstrap JS:
+1.  **Creación del Componente Livewire Principal:**
+    *   Utilizaremos Artisan para crear el componente central que orquestará todo el proceso.
+    *   **Comando:** `php artisan make:livewire PointOfSale`
+    *   Esto creará `app/Livewire/PointOfSale.php` y `resources/views/livewire/point-of-sale.blade.php`.
+
+2.  **Ruta y Vista Contenedora:**
+    *   Definiremos una nueva ruta en `routes/web.php` para acceder al TPV.
+    *   **Ruta:** `Route::get('/ventas/pos', \App\Http\Livewire\PointOfSale::class)->name('sales.pos');`
+    *   Esta ruta renderizará directamente nuestro componente Livewire dentro del layout principal de la aplicación.
+
+3.  **Análisis y Refuerzo de Modelos/Relaciones:**
+    *   Asegurarnos de que las relaciones Eloquent están correctamente definidas:
+        *   `Sale` tiene muchos `SaleItem`.
+        *   `SaleItem` pertenece a un `Product`.
+        *   `Sale` pertenece a un `Customer` y a un `User`.
+        *   `Product` tiene un stock (`stock` o `quantity` en la tabla `products`).
+    *   Crearemos los métodos necesarios en los modelos si aún no existen.
+
+### **Fase 2: Diseño de la Interfaz de Usuario (UI) con Livewire**
+
+Nos enfocaremos en el archivo `point-of-sale.blade.php` para maquetar la interfaz. Usaremos un diseño de dos columnas para una ergonomía óptima.
+
+*   **Columna Izquierda (70% del ancho):**
+    1.  **Búsqueda de Productos:** Un campo de texto (`wire:model.live="productSearch"`) para buscar productos por código de barras o nombre.
+    2.  **Lista de Productos Agregados (Carrito):** Una tabla que mostrará los productos seleccionados. Columnas: Producto, Cantidad (editable), Precio Unitario, Subtotal. Incluirá un botón para eliminar cada ítem.
+
+*   **Columna Derecha (30% del ancho):**
+    1.  **Sección de Cliente:**
+        *   Un campo de texto (`wire:model.live="customerSearch"`) para buscar clientes por nombre o RIF.
+        *   Un área para mostrar los datos del cliente seleccionado.
+        *   Un botón "Crear Nuevo Cliente" que abrirá un modal.
+    2.  **Resumen de la Venta:** Subtotal, Impuestos (IVA), y Total.
+    3.  **Acciones:**
+        *   Un botón "Finalizar Venta" (deshabilitado hasta que se seleccione un cliente y haya al menos un producto).
+        *   Un botón "Cancelar Venta".
+
+### **Fase 3: Lógica del Componente Livewire (`PointOfSale.php`)**
+
+Aquí es donde reside la lógica que responde a las interacciones del usuario.
+
+1.  **Propiedades Públicas (Estado del Componente):**
+    *   `public $customerSearch = '';`
+    *   `public $customers = [];`
+    *   `public $selectedCustomerId;`
+    *   `public $productSearch = '';`
+    *   `public $saleItems = [];` // Array con los productos del carrito
+    *   `public $subtotal = 0, $tax = 0, $total = 0;`
+
+2.  **Manejo de Clientes (Requisito 1):**
+    *   Un método `updatedCustomerSearch()` que se ejecuta automáticamente cuando `$customerSearch` cambia. Hará una consulta a la base de datos y llenará el array `$customers`.
+    *   Un método `selectCustomer($id)` para asignar el cliente a la venta.
+    *   Implementaremos un modal (usando Alpine.js) para el formulario de creación de cliente. Un método `storeCustomer()` en el componente se encargará de validar y guardar el nuevo cliente.
+
+3.  **Manejo de Productos (Requisitos 2 y 3):**
+    *   Un método `addProduct($productId)`:
+        *   **Verificación de Inventario:** Antes de agregar, consultará el stock del producto. Si es insuficiente, mostrará una notificación de error (`session()->flash()`).
+        *   Si hay stock, lo añade al array `$saleItems`. Si ya existe, incrementa su cantidad.
+        *   Llamará a un método `calculateTotals()` para actualizar el resumen.
+    *   Métodos `updateQuantity($index, $quantity)` y `removeItem($index)` para manipular el carrito.
+
+4.  **Finalización de la Venta:**
+    *   Un método `finalizeSale()`:
+        *   Utilizará una **transacción de base de datos** (`DB::transaction()`) para garantizar la atomicidad y la integridad de la operación.
+        *   **Pasos críticos dentro de la transacción:**
+            1.  Crear el registro principal en la tabla `sales`.
+            2.  Iterar sobre `$saleItems` y crear los registros correspondientes en `sale_items`.
+            3.  **Actualización de Inventario:** Por cada `SaleItem` creado, se debe actualizar de forma inmediata el stock del `Product` asociado, decrementando la cantidad vendida.
+            4.  **Registro de Movimiento de Inventario:** Simultáneamente a la actualización del stock, se debe crear un registro en la tabla `inventory_movements` para cada producto vendido. Este registro debe reflejar el tipo de movimiento ('Venta'), la cantidad, y el ID del producto, garantizando así una trazabilidad completa.
+        *   Al finalizar con éxito la transacción, se limpiará el estado del componente (`reset()`) y se emitirá un evento al navegador para la impresión del ticket.
+
+### **Fase 4: Impresión del Ticket Térmico (Requisito 4)**
+
+1.  **Ruta y Controlador para el Ticket:**
+    *   Crearemos una ruta: `GET /tickets/sale/{sale}`.
+    *   El controlador (`ReportController@showSaleTicket`) cargará los datos y los pasará a una vista Blade.
+
+2.  **Vista Blade para el Ticket:**
+    *   Crearemos una vista (`resources/views/reports/sale_ticket.blade.php`) con HTML y CSS simple para impresoras térmicas.
+    *   **Integración:** Se deberá analizar y utilizar el servicio existente `ThermalPrinterService.php` dentro del controlador para formatear los datos.
+
+3.  **Disparar la Impresión (JavaScript):**
+    *   En el método `finalizeSale()` de Livewire, emitiremos un evento: `$this->dispatch('print-ticket', saleId: $newSale->id);`
+    *   En el layout principal, un script de JavaScript escuchará este evento, abrirá una nueva ventana con la URL del ticket y ejecutará `window.print()`.
+    *   **Script:**
         ```javascript
-        import 'bootstrap';
+        <script>
+            document.addEventListener('livewire:initialized', () => {
+                Livewire.on('print-ticket', (event) => {
+                    const saleId = event.saleId;
+                    const url = `/tickets/sale/${saleId}`;
+                    const printWindow = window.open(url, '_blank', 'height=600,width=400');
+                    printWindow.onload = function() {
+                        printWindow.print();
+                    };
+                });
+            });
+        </script>
         ```
-    *   Configurar `resources/sass/app.scss` para importar Bootstrap SCSS:
-        ```scss
-        // Variables
-        @import 'variables';
-
-        // Bootstrap
-        @import 'bootstrap/scss/bootstrap';
-
-        // Custom styles
-        // ...
-        ```
-    *   Asegurar que `vite.config.js` esté configurado para compilar SCSS y JS.
-
 ---
 
-## 2. Creación de la Plantilla Base (`resources/views/layouts/app.blade.php`)
+### **Anexo Técnico: Patrón de Actualización de Inventario (Basado en `PurchaseCrud.php`)**
 
-*   **Estructura HTML5:** Incluir el boilerplate básico (doctype, html, head, body).
+El análisis del componente `PurchaseCrud.php` revela un patrón robusto y centralizado para la gestión de inventario, el cual debe ser replicado en el componente de ventas.
 
-*   **Meta Tags Responsivas:** Añadir meta tags para asegurar la correcta visualización en dispositivos móviles.
-    ```html
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    ```
+1.  **Método Centralizador:** Existe un método privado `recordInventoryMovement()`. Esta es la práctica a seguir.
+    *   **Responsabilidad 1: Crear Registro de Movimiento:** Crea un registro en la tabla `inventory_movements` detallando el `product_id`, `user_id`, `movement_type` ('in' para compras), `quantity`, el ID y tipo del modelo de referencia (`purchase`).
+    *   **Responsabilidad 2: Actualizar Stock del Producto:** Utiliza los métodos `increment()` o `decrement()` de Eloquent sobre la columna de stock del modelo `Product`.
 
-*   **Integrar CSS:**
-    ```html
-    <link rel="stylesheet" href="{{ asset('build/assets/app.css') }}">
-    ```
+2.  **Ejecución Transaccional:** Todas las operaciones de guardado, actualización o borrado que afectan al inventario están envueltas en un `DB::transaction()`. Esto asegura la atomicidad: o todas las operaciones (crear compra, crear ítems, actualizar inventario, registrar movimiento) tienen éxito, o todas se revierten.
 
-*   **Definir Secciones Blade:**
-    *   `@yield('title')` para el título de la página.
-    *   `@yield('styles')` en el `head` para CSS específico de la página.
-    *   `@yield('header')` para el componente del header.
-    *   `@yield('sidebar')` para el componente del sidebar.
-    *   `@yield('content')` para el contenido principal de la página (el "dashboard").
-    *   `@yield('scripts')` al final del `body` para JS específico.
+3.  **Invocación Condicional:** La lógica de inventario solo se ejecuta cuando el estado de la compra lo justifica (ej. `status === 'received'`).
 
-*   **Estructura General del Layout:** Utilizar clases de Bootstrap 5 para un layout flexible:
-    *   Contenedor principal (`d-flex flex-column min-vh-100` para ocupar toda la altura).
-    *   Un `div` para el header (`sticky-top` para fijarlo).
-    *   Un `div` principal para el contenido y sidebar (`d-flex flex-grow-1` para que crezca y ocupe el espacio restante).
-    *   Dentro de este, un `div` para el sidebar y otro para el contenido principal.
-    *   Clases de grid de Bootstrap (`col-md-X`, `col-lg-Y`) para definir el ancho del sidebar y el contenido en diferentes tamaños de pantalla, y ocultar/mostrar el sidebar según sea necesario (e.g., `d-none d-md-block` para el sidebar en desktop, y un botón para toggler un offcanvas en móvil).
+**Aplicación al Módulo de Ventas (`PointOfSale`):**
 
----
-
-## 3. Componente del Header (`resources/views/partials/header.blade.php`)
-
-*   **Creación:** Crear el archivo `resources/views/partials/header.blade.php`.
-
-*   **Contenido:**
-    *   Barra de navegación con la marca/nombre del sitio.
-    *   Un botón (`navbar-toggler`) para el sidebar responsivo (offcanvas).
-    *   Posibles elementos de usuario (ej. dropdown de perfil, logout) utilizando componentes de navbar y dropdown de Bootstrap 5.
-    *   Estilo moderno y profesional (ej. `bg-dark`, `navbar-dark`, `shadow-sm`).
-
----
-
-## 4. Componente del Sidebar (`resources/views/partials/sidebar.blade.php`)
-
-*   **Creación:** Crear el archivo `resources/views/partials/sidebar.blade.php`.
-
-*   **Contenido:**
-    *   Menú de navegación (AdminLTE-like) con enlaces a diferentes secciones (ej. Dashboard, Usuarios, Productos).
-    *   Utilizar listas (`ul`, `li`) y enlaces (`a`) de HTML, aplicando clases de Bootstrap para el estilo.
-    *   Implementar un menú multinivel básico con JavaScript para toggler submenús (si es necesario).
-    *   **Responsividad:** Utilizar un offcanvas de Bootstrap para el sidebar en dispositivos móviles, que se activa con el botón del header. En pantallas grandes, el sidebar estará visible y fijo.
-
----
-
-## 5. Vista del Dashboard (`resources/views/dashboard.blade.php`)
-
-*   **Creación:** Crear el archivo `resources/views/dashboard.blade.php`.
-
-*   **Extender Layout:**
-    ```blade
-    @extends('layouts.app')
-
-    @section('title', 'Dashboard')
-
-    @section('header')
-        @include('partials.header')
-    @endsection
-
-    @section('sidebar')
-        @include('partials.sidebar')
-    @endsection
-
-    @section('content')
-        <div class="container-fluid mt-4">
-            <h1 class="mb-4">Dashboard</h1>
-            <div class="row">
-                <div class="col-md-6 col-lg-3 mb-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Card Título 1</h5>
-                            <p class="card-text">Contenido de la tarjeta 1.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-3 mb-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Card Título 2</h5>
-                            <p class="card-text">Contenido de la tarjeta 2.</p>
-                        </div>
-                    </div>
-                </div>
-                <!-- Más tarjetas o elementos del dashboard -->
-            </div>
-        </div>
-    @endsection
-    ```
-
-*   **Contenido del Dashboard:** Utilizar componentes de Bootstrap (cards, grid system, etc.) para crear una disposición de ejemplo que sea profesional y responsive.
-
----
-
-## 6. Enrutamiento (`routes/web.php`)
-
-*   Definir una ruta para el dashboard que cargue la vista `dashboard.blade.php`.
-*   ```php
-    use Illuminate\Support\Facades\Route;
-
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-    ```
-
----
-
-## 7. Estilización y JavaScript Adicional
-
-*   **`resources/sass/_variables.scss`:** Para personalizar colores y otras variables de Bootstrap.
-*   **`resources/sass/app.scss`:** Para estilos personalizados y sobrescrituras CSS que no sean de Bootstrap.
-*   **`resources/js/app.js`:** Para inicializar componentes de Bootstrap que requieran JS (ej. tooltips, dropdowns) y cualquier lógica de JS personalizada para el sidebar (ej. alternar visibilidad en desktop, offcanvas en móvil).
-
----
-
-## 8. Verificación y Pruebas
-
-*   **Compilar Assets:** `npm run dev` (o `npm run build` para producción).
-*   **Servir Aplicación:** `php artisan serve`.
-*   **Pruebas Manuales:**
-    *   Navegar al `/dashboard`.
-    *   Verificar que el header y sidebar se muestran correctamente.
-    *   Probar la responsividad del layout redimensionando la ventana del navegador o utilizando las herramientas de desarrollo del navegador para simular diferentes dispositivos.
-    *   Verificar que los estilos sean modernos y profesionales.
+*   Se creará un método privado `recordInventoryMovement()` en el componente `PointOfSale`.
+*   Este método será invocado dentro de la transacción del método `finalizeSale()` por cada producto vendido.
+*   El `movement_type` será `'out'`.
+*   La `reference_type` será `'sale'`.
+*   Se usará `$product->decrement('current_stock', $quantity)`.
