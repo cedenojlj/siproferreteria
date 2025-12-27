@@ -56,6 +56,10 @@
                             <td>{{ $purchase->created_at->format('Y-m-d H:i') }}</td>
                             <td>
                                 <button wire:click="edit({{ $purchase->id }})" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></button>
+                                <button wire:click="generateSinglePurchasePdf({{ $purchase->id }})" class="btn btn-sm btn-info" wire:loading.attr="disabled" wire:target="generateSinglePurchasePdf({{ $purchase->id }})">
+                                    <span wire:loading.remove wire:target="generateSinglePurchasePdf({{ $purchase->id }})"><i class="fas fa-file-pdf"></i></span>
+                                    <span wire:loading wire:target="generateSinglePurchasePdf({{ $purchase->id }})"><span class="spinner-border spinner-border-sm"></span></span>
+                                </button>
                                 <button wire:click="delete({{ $purchase->id }})" wire:confirm="¿Estás seguro de que quieres eliminar esta compra?" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>

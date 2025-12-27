@@ -456,4 +456,20 @@ class PurchaseCrud extends Component
             echo $pdf->stream();
         }, 'reporte-compras.pdf');
     }
+
+    public function generateSinglePurchasePdf($purchaseId)
+    {
+        $company_id = Auth::user()->company_id;
+        $purchase = Purchase::where('company_id', $company_id)
+            ->with(['supplier', 'purchaseItems.product', 'user'])
+            ->findOrFail($purchaseId);
+
+        $company = Auth::user()->company;
+
+        $pdf = Pdf::loadView('reports.single_purchase_pdf', compact('purchase', 'company'));
+        
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'compra-' . $purchase->invoice_number . '.pdf');
+    }
 }
