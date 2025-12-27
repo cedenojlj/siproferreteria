@@ -40,7 +40,10 @@ class PurchaseCrud extends Component
         'exchange_rate' => 'required|numeric|min:0',
         'status' => 'required|in:pending,received,cancelled',
         'notes' => 'nullable|string',
-        'items' => 'required|array|min:1'
+        'items' => 'required|array|min:1',
+        // 'items.*.product_id' => 'required|exists:products,id',
+        // 'items.*.quantity' => 'required|numeric|min:1',
+        // 'items.*.unit_price' => 'required|numeric|min:0'
     ];
 
     public function mount()
@@ -154,6 +157,21 @@ class PurchaseCrud extends Component
     {
         // This hook will trigger when any nested property of the $items array is updated.
         // For example, 'items.0.quantity' or 'items.1.price'.
+        //verificar que la cantidad y el precio sean numeros y despues validos
+
+        $parts = explode('.', $key);
+        if (count($parts) == 3) {
+            $index = $parts[1];
+            $field = $parts[2];
+
+            if ($field === 'quantity' || $field === 'price') {
+                $value = floatval($value);
+                if ($value < 0) {
+                    $this->addError("items.{$index}.{$field}", "La cantidad y el precio deben ser números positivos.");
+                }
+            }
+        }
+
         $this->calculateTotals();
     }
 
@@ -166,21 +184,25 @@ class PurchaseCrud extends Component
         }
     }
 
-    public function calculateTotals()
-    {
-        $this->subtotal = 0;
-        foreach ($this->items as $item) {
-            $quantity = floatval($item['quantity'] ?? 0);
-            $price = floatval($item['price'] ?? 0);
-            $this->subtotal += $quantity * $price;
-        }        
-        
-        // Assuming a tax rate of 16% for this example.
-        // You should probably get this from a config or company setting.
-        $this->tax = $this->subtotal * 0.16;
-        $this->total = $this->subtotal + $this->tax;
-    }
-
+        public function calculateTotals()
+        {
+            $this->subtotal = 0;
+            foreach ($this->items as $item) {
+                $quantity = floatval($item['quantity'] ?? 0);
+                $price = floatval($item['price'] ?? 0);
+                $this->subtotal += $quantity * $price;
+            }
+            
+            // Assuming a tax rate of 16% for this example.
+            // You should probably get this from a config or company setting.
+            $this->tax = $this->subtotal * 0.16;
+            $this->total = $this->subtotal + $this->tax;
+    
+            // Format for display
+            $this->subtotal = number_format($this->subtotal, 2, '.', '');
+            $this->tax = number_format($this->tax, 2, '.', '');
+            $this->total = number_format($this->total, 2, '.', '');
+        }
     public function openModal()
     {
         $this->isModalOpen = true;
@@ -217,9 +239,9 @@ class PurchaseCrud extends Component
                 'supplier_id' => $this->supplier_id,
                 'payment_currency' => $this->payment_currency,
                 'exchange_rate' => $this->exchange_rate,
-                'subtotal' => $this->subtotal,
-                'tax' => $this->tax,
-                'total' => $this->total,
+                'subtotal' => floatval($this->subtotal),
+                'tax' => floatval($this->tax),
+                'total' => floatval($this->total),
                 'status' => $this->status,
                 'notes' => $this->notes,
             ]);
@@ -228,7 +250,8 @@ class PurchaseCrud extends Component
                 $purchase->purchaseItems()->create([
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
-                    'price' => $item['price'],
+                    'unit_price' => $item['price'],
+                    'subtotal' => floatval($item['quantity']) * floatval($item['price']),
                 ]);
 
                 // Update stock if purchase is received
@@ -265,7 +288,7 @@ class PurchaseCrud extends Component
                 'product_id' => $item->product_id,
                 'name' => $item->product->name,
                 'quantity' => $item->quantity,
-                'price' => $item->price,
+                'price' => $item->unit_price,
             ];
         }
 
@@ -299,9 +322,9 @@ class PurchaseCrud extends Component
                 'supplier_id' => $this->supplier_id,
                 'payment_currency' => $this->payment_currency,
                 'exchange_rate' => $this->exchange_rate,
-                'subtotal' => $this->subtotal,
-                'tax' => $this->tax,
-                'total' => $this->total,
+                'subtotal' => floatval($this->subtotal),
+                'tax' => floatval($this->tax),
+                'total' => floatval($this->total),
                 'status' => $this->status,
                 'notes' => $this->notes,
             ]);
@@ -312,7 +335,8 @@ class PurchaseCrud extends Component
                 $purchase->purchaseItems()->create([
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
-                    'price' => $item['price'],
+                    'unit_price' => $item['price'],
+                    'subtotal' => floatval($item['quantity']) * floatval($item['price']),
                 ]);
 
                 // Update stock if new status is received

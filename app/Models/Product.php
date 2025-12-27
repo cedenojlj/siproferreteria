@@ -54,6 +54,8 @@ class Product extends Model
         return $this->current_stock <= $this->min_stock;
     }
 
+    
+
     // Relaciones
     public function company(): BelongsTo
     {
@@ -89,4 +91,5 @@ class Product extends Model
     {
         return $this->hasMany(RefundItem::class);
     }
+
 }

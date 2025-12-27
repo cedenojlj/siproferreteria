@@ -93,6 +93,7 @@
                              <div class="col-md-4 mb-3">
                                 <label for="status" class="form-label">Estado:</label>
                                 <select class="form-select @error('status') is-invalid @enderror" id="status" wire:model.defer="status">
+                                    <option value="">Seleccione un estado</option>
                                     <option value="pending">Pendiente</option>
                                     <option value="received">Recibida</option>
                                     <option value="cancelled">Cancelada</option>
@@ -181,6 +182,7 @@
                              <div class="col-md-4 mb-3">
                                 <label for="payment_currency" class="form-label">Moneda de Pago:</label>
                                 <select class="form-select @error('payment_currency') is-invalid @enderror" id="payment_currency" wire:model.defer="payment_currency">
+                                    <option value="">Seleccione una moneda</option>
                                     <option value="BS">Bolívares (BS)</option>
                                     <option value="USD">Dólares (USD)</option>
                                 </select>
