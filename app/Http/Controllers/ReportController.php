@@ -7,6 +7,7 @@ use App\Models\Sale;
 use App\Models\Purchase;
 use App\Models\Product;
 use App\Models\InventoryMovement;
+use App\Services\ThermalPrinterService;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
@@ -88,5 +89,20 @@ class ReportController extends Controller
         $pdf = Pdf::loadView('reports.top-products', compact('products'));
         
         return $pdf->download('productos-mas-vendidos-' . date('Y-m-d') . '.pdf');
+    }
+
+    public function showSaleTicket(Sale $sale, ThermalPrinterService $printerService)
+    {
+        // Cargar las relaciones necesarias
+        $sale->load('customer', 'seller', 'saleItems.product');
+
+        // Formatear el ticket usando el servicio
+        $formatted_ticket = $printerService->formatSaleTicket($sale);
+
+        // Pasar los datos a la vista
+        return view('reports.sale_ticket', [
+            'sale' => $sale,
+            'formatted_ticket' => $formatted_ticket,
+        ]);
     }
 }

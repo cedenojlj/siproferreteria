@@ -25,7 +25,7 @@ Route::get('/logout', function () {
 
 
 Route::middleware(['auth', 'web'])->group(function () {
-    Route::get('/pos', \App\Livewire\PointOfSale::class)->name('pos'); 
+    Route::get('/ventas/pos', \App\Livewire\PointOfSale::class)->name('sales.pos'); 
     Route::get('/productsmanager', \App\Livewire\ProductManager::class)->name('productsmanager'); 
     Route::get('/exchange-rates', \App\Livewire\ExchangeRateManager::class)->name('exchange-rates'); 
     Route::get('/reports/sales', [ReportController::class, 'salesReport'])->name('reports.sales');
@@ -90,4 +90,6 @@ Route::middleware(['auth', 'web'])->group(function () {
     Route::get('/management/roles-permissions', \App\Livewire\RolePermissionManager::class)
         ->middleware('can:manage_roles')
         ->name('roles.permissions.manager');
+
+    Route::get('/tickets/sale/{sale}', [ReportController::class, 'showSaleTicket'])->name('tickets.sale');
 });

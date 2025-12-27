@@ -37,5 +37,17 @@
     <!-- Scripts -->
     @stack('scripts')
     @livewireScripts
+    <script>
+        document.addEventListener('livewire:initialized', () => {
+            Livewire.on('print-ticket', (event) => {
+                const saleId = event.saleId;
+                const url = `/tickets/sale/${saleId}`;
+                const printWindow = window.open(url, '_blank', 'height=600,width=400');
+                printWindow.onload = function() {
+                    printWindow.print();
+                };
+            });
+        });
+    </script>
 </body>
 </html>
