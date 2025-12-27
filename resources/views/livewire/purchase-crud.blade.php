@@ -136,7 +136,7 @@
                                                 <input type="number" step="0.01" class="form-control form-control-sm" min="0"
                                                        wire:model.live="items.{{ $index }}.price">
                                             </td>
-                                            <td>{{ number_format(intval($item['quantity']) * floatval($item['price']), 2) }}</td>
+                                            <td>{{ number_format(floatval($item['quantity'] ?? 0) * floatval($item['price'] ?? 0), 2) }}</td>
                                             <td class="text-center">
                                                 <button type="button" class="btn btn-danger btn-sm" wire:click="removeItem({{ $index }})">
                                                     <i class="fas fa-trash"></i>

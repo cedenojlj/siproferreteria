@@ -150,20 +150,11 @@ class PurchaseCrud extends Component
         $this->calculateTotals();
     }
 
-    public function updateItemQuantity($index, $quantity)
+    public function updatedItems($value, $key)
     {
-        if (isset($this->items[$index])) {
-            $this->items[$index]['quantity'] = max(1, $quantity); // Ensure quantity is at least 1
-            $this->calculateTotals();
-        }
-    }
-    
-    public function updateItemPrice($index, $price)
-    {
-        if (isset($this->items[$index])) {
-            $this->items[$index]['price'] = max(0, $price); // Ensure price is non-negative
-            $this->calculateTotals();
-        }
+        // This hook will trigger when any nested property of the $items array is updated.
+        // For example, 'items.0.quantity' or 'items.1.price'.
+        $this->calculateTotals();
     }
 
     public function removeItem($index)
@@ -179,8 +170,10 @@ class PurchaseCrud extends Component
     {
         $this->subtotal = 0;
         foreach ($this->items as $item) {
-            $this->subtotal += $item['price'] * $item['quantity'];
-        }
+            $quantity = floatval($item['quantity'] ?? 0);
+            $price = floatval($item['price'] ?? 0);
+            $this->subtotal += $quantity * $price;
+        }        
         
         // Assuming a tax rate of 16% for this example.
         // You should probably get this from a config or company setting.

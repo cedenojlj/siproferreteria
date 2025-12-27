@@ -26,7 +26,7 @@ class Purchase extends Model
     ];
 
     protected $casts = [
-        'exchange_rate' => 'decimal:4',
+        'exchange_rate' => 'decimal:2',
         'subtotal' => 'decimal:2',
         'tax' => 'decimal:2',
         'total' => 'decimal:2',
