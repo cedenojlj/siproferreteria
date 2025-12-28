@@ -10,6 +10,8 @@ use App\Models\InventoryMovement;
 use App\Services\ThermalPrinterService;
 use Barryvdh\DomPDF\Facade\Pdf;
 
+use Carbon\Carbon;
+
 class ReportController extends Controller
 {
      // Reporte de Ventas
@@ -55,16 +57,34 @@ class ReportController extends Controller
     }
     
     // Reporte de Inventario
-    public function inventoryReport()
+    public function inventoryReport(Request $request)
     {
-        $products = Product::with(['category', 'unitMeasure'])
-            ->where('is_active', true)
-            ->orderBy('current_stock', 'asc')
-            ->get();
-            
-        $pdf = Pdf::loadView('reports.inventory', compact('products'));
-        
-        return $pdf->download('reporte-inventario-' . date('Y-m-d') . '.pdf');
+        $user = auth()->user();
+        $company = $user->company;
+
+        // 1. Obtener los productos de la compañía del usuario
+        $products = Product::with('category', 'unitMeasure') // Se eliminó 'supplier'
+                            ->where('company_id', $user->company_id) // Filtrado por compañía
+                            ->where('is_active', true)
+                            ->orderBy('name', 'asc')
+                            ->get();
+
+        // 2. Preparar datos adicionales para la vista
+        $data = [
+            'products' => $products,
+            'generationDate' => Carbon::now()->format('d/m/Y H:i:s'),
+            'company' => $company, // Se pasa la compañía del usuario
+        ];
+
+        // 3. Cargar la vista Blade que diseñará nuestro PDF
+        $pdf = PDF::loadView('reports.inventory_pdf', $data);
+
+        // 4. Configurar el papel y la orientación
+        $pdf->setPaper('A4', 'landscape');
+
+        // 5. Descargar el PDF con un nombre de archivo dinámico
+        $fileName = 'reporte-inventario-' . Carbon::now()->format('Y-m-d') . '.pdf';
+        return $pdf->download($fileName);
     }
     
     // Reporte de Productos Más Vendidos
@@ -91,7 +111,7 @@ class ReportController extends Controller
         return $pdf->download('productos-mas-vendidos-' . date('Y-m-d') . '.pdf');
     }
 
-    public function showSaleTicket(Sale $sale, ThermalPrinterService $printerService)
+    /* public function showSaleTicket(Sale $sale, ThermalPrinterService $printerService)
     {
         // Cargar las relaciones necesarias
         $sale->load('customer', 'seller', 'saleItems.product');
@@ -104,5 +124,5 @@ class ReportController extends Controller
             'sale' => $sale,
             'formatted_ticket' => $formatted_ticket,
         ]);
-    }
+    } */
 }
