@@ -75,7 +75,7 @@
                             <div class="list-group mb-2">
                                 @foreach($customers as $customer)
                                     <a href="#" wire:click.prevent="selectCustomer({{ $customer->id }})" class="list-group-item list-group-item-action">
-                                        {{ $customer->name }} ({{ $customer->document_number ?? $customer->rif }})
+                                        {{ $customer->name }} ({{ $customer->document_type }}-{{ $customer->document }})
                                     </a>
                                 @endforeach
                             </div>
@@ -90,7 +90,7 @@
                             </div>
                         @else
                             <p class="text-muted">No hay cliente seleccionado.</p>
-                            <button wire:click="$toggle('showCustomerModal')" class="btn btn-sm btn-success">Crear Nuevo Cliente</button>
+                            <button wire:click="openCustomerModal" class="btn btn-sm btn-success">Crear Nuevo Cliente</button>
                         @endif
                     </div>
                 </div>
@@ -181,14 +181,28 @@
 @script
     <script>
         document.addEventListener('livewire:initialized', () => {
-            // Show/hide customer creation modal
+            const customerModalEl = document.getElementById('customerModal');
+            let customerModal;
+
+            // Ensure Bootstrap Modal is initialized only once.
+            customerModalEl.addEventListener('shown.bs.modal', () => {
+                if (!customerModal) {
+                    customerModal = bootstrap.Modal.getInstance(customerModalEl);
+                }
+            });
+
             Livewire.on('show-customer-modal', () => {
-                var customerModal = new bootstrap.Modal(document.getElementById('customerModal'));
+                // Use the getter to be safe, or initialize a new one.
+                if (!customerModal) {
+                    customerModal = new bootstrap.Modal(customerModalEl);
+                }
                 customerModal.show();
             });
+
             Livewire.on('hide-customer-modal', () => {
-                var customerModal = bootstrap.Modal.getInstance(document.getElementById('customerModal'));
-                customerModal.hide();
+                if (customerModal) {
+                    customerModal.hide();
+                }
             });
         });
     </script>
