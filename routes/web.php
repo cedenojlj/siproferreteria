@@ -32,6 +32,12 @@ Route::middleware(['auth', 'web'])->group(function () {
     Route::get('/reports/purchases', [ReportController::class, 'purchasesReport'])->name('reports.purchases');
     Route::get('/reports/inventory', [ReportController::class, 'inventoryReport'])->name('reports.inventory');
     Route::get('/reports/top-products', [ReportController::class, 'topProductsReport'])->name('reports.top-products');
+    Route::get('/reports/top-selling-products', [ReportController::class, 'topSellingProductsReport'])->name('reports.top_selling_products');
+    
+    Route::get('/reports', function () {
+        return view('reports');
+    })->name('reports.index');
+
     //Route::get('/company', \App\Livewire\Company\EditCompany::class)->name('company.edit');
 
     Route::get('/company', function () {

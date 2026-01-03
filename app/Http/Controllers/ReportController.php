@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\InventoryMovement;
 use App\Services\ThermalPrinterService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 
 use Carbon\Carbon;
 
@@ -125,4 +126,51 @@ class ReportController extends Controller
             'formatted_ticket' => $formatted_ticket,
         ]);
     } */
+
+    /**
+     * Genera un reporte en PDF de los productos más vendidos.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function topSellingProductsReport(Request $request)
+    {
+        // $this->authorize('view_reports'); // Opcional: si usas Policies para seguridad
+        $user = auth()->user();
+        $company = $user->company;
+
+        // Fechas para el filtrado (opcional pero recomendado)
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        // Consulta para obtener los productos más vendidos
+        $topSellingProducts = Product::select(
+            'products.id',
+            'products.name',
+            'products.barcode',
+            DB::raw('SUM(sale_items.quantity) as total_quantity_sold')
+        )
+        ->join('sale_items', 'products.id', '=', 'sale_items.product_id')
+        ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+        ->where('products.company_id', $user->company_id) // Filtrar por la compañía del usuario
+        ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+            // Aplica el filtro de fecha si se proporcionan las fechas
+            return $query->whereBetween('sales.sale_date', [$startDate, $endDate]);
+        })
+        ->groupBy('products.id', 'products.name', 'products.barcode')
+        ->orderBy('total_quantity_sold', 'desc')
+        ->take(100) // Limita el reporte a los 100 más vendidos
+        ->get();
+
+        // Generación del PDF
+        $pdf = PDF::loadView('reports.top_selling_products_pdf', [
+            'products' => $topSellingProducts,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'company' => $company,
+            'generationDate' => now()->format('d/m/Y H:i:s')
+        ]);
+
+        return $pdf->download('reporte-productos-mas-vendidos-' . now()->format('Y-m-d') . '.pdf');
+    }
 }

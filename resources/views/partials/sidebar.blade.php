@@ -88,4 +88,14 @@
             <i class="bi bi-currency-exchange"></i> Tasas de Cambio
         </a>
     </li>
+
+    <li class="nav-item mt-2">
+        <h6 class="text-secondary ps-3">Reportes</h6>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link text-white" href="{{ route('reports.index') }}">
+            <i class="bi bi-journal-text"></i> Reportes
+        </a>
+    </li>
 </ul>
