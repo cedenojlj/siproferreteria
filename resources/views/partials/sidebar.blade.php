@@ -51,7 +51,7 @@
     </li>
 
     <li class="nav-item">
-        <a class="nav-link text-white" href="{{ route('ventas') }}">
+        <a class="nav-link text-white" href="{{ route('ventas_pos') }}">
             <i class="bi bi-truck"></i> Ventas
         </a>
     </li>

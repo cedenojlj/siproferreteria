@@ -74,7 +74,11 @@ Route::middleware(['auth', 'web'])->group(function () {
 
      Route::get('/ventas', function () {
         return view('ventas');
-    })->name('ventas');     
+    })->name('ventas'); 
+    
+     Route::get('/ventas_pos', function () {
+        return view('ventasPos');
+    })->name('ventas_pos');   
 
      Route::get('/mvt_inventory', function () {
         return view('inventory_movements');

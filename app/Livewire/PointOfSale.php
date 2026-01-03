@@ -9,13 +9,11 @@ use App\Models\Sale; // Will be needed for sales
 use App\Models\SaleItem; // Will be needed for sale items
 use App\Models\InventoryMovement; // Will be needed for inventory movements
 use App\Models\User; // Will be needed for user association
-use App\Traits\BelongsToCompany; // To filter by company
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PointOfSale extends Component
 {
-    use BelongsToCompany; // Use the trait to filter by company_id
 
     public $customerSearch = '';
     public $customers = [];
@@ -66,8 +64,8 @@ class PointOfSale extends Component
                 $this->customers = Customer::where('company_id', Auth::user()->company_id)
                     ->where(function ($query) {
                         $query->where('name', 'like', '%' . $this->customerSearch . '%')
-                            ->orWhere('document_number', 'like', '%' . $this->customerSearch . '%')
-                            ->orWhere('rif', 'like', '%' . $this->customerSearch . '%'); // Assuming 'rif' also exists
+                            ->orWhere('document', 'like', '%' . $this->customerSearch . '%');
+                            
                     })
                     ->get();
             }
