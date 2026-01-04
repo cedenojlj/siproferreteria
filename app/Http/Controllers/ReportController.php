@@ -114,17 +114,24 @@ class ReportController extends Controller
 
     public function showSaleTicket(Sale $sale, ThermalPrinterService $printerService)
     {
-        // Cargar las relaciones necesarias
-        $sale->load('customer', 'seller', 'saleItems.product');
+        try {
+            // Cargar las relaciones necesarias si no se han cargado automáticamente
+            $sale->loadMissing('customer', 'seller', 'cashier', 'saleItems.product');
 
-        // Formatear el ticket usando el servicio
-        $formatted_ticket = $printerService->formatSaleTicket($sale);
+            // El servicio se encarga de la impresión directamente.
+            $printerService->printSaleTicket($sale);
 
-        // Pasar los datos a la vista
-        return view('reports.sale_ticket', [
-            'sale' => $sale,
-            'formatted_ticket' => $formatted_ticket,
-        ]);
+            // Retornar una respuesta JSON de éxito
+            return response()->json(['message' => 'Ticket enviado a la impresora correctamente.']);
+
+        } catch (\Exception $e) {
+            // Manejar cualquier excepción que ocurra durante la impresión
+            // Es buena idea loggear el error para depuración
+            \Log::error("Error al imprimir ticket de venta #{$sale->id}: " . $e->getMessage());
+
+            // Retornar una respuesta JSON de error
+            return response()->json(['error' => 'No se pudo conectar con la impresora.'], 500);
+        }
     }
 
     /**

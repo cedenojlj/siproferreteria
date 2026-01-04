@@ -20,11 +20,9 @@ class Sale extends Model
         'payment_currency',
         'payment_method',
         'payment_type',
-        'exchange_rate',
-        'subtotal_local',
+        'exchange_rate',        
         'subtotal_usd',
-        'tax_local',
-        'total_local',
+        'tax',        
         'total_usd',
         'pending_balance',
         'status',
@@ -32,11 +30,9 @@ class Sale extends Model
     ];
 
     protected $casts = [
-        'exchange_rate' => 'decimal:4',
-        'subtotal_local' => 'decimal:2',
+        'exchange_rate' => 'decimal:2',        
         'subtotal_usd' => 'decimal:2',
-        'tax_local' => 'decimal:2',
-        'total_local' => 'decimal:2',
+        'tax' => 'decimal:2',        
         'total_usd' => 'decimal:2',
         'pending_balance' => 'decimal:2',
     ];

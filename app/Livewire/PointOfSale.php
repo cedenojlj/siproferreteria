@@ -244,13 +244,19 @@ class PointOfSale extends Component
         // extrae la tax_rate de la compañia autenticada
         $company = Auth::user()->company;
         $taxRate = $company->tax_rate / 100; // Convert to decimal
+
+        //dd($taxRate);
         // Assuming a fixed tax rate for now, e.g., 16%
         $this->tax = $this->subtotal * $taxRate;
+
+        //dd($this->tax);
         $this->total = $this->subtotal + $this->tax;
     }
 
     public function finalizeSale()
     {
+          
+        
         if (!$this->selectedCustomer) {
             session()->flash('error', 'Debe seleccionar un cliente para finalizar la venta.');
             return;
@@ -274,7 +280,7 @@ class PointOfSale extends Component
                 'payment_type' => $this->payment_type,
                 'exchange_rate' => $this->exchange_rate,                
                 'subtotal_usd' => $this->subtotal,
-                'tax_usd' => $this->tax * $this->exchange_rate,                
+                'tax' => $this->tax,                
                 'total_usd' => $this->total,
                 'pending_balance' => $this->total,
                 'status' => 'pending',
