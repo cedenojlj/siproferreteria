@@ -281,6 +281,8 @@ class CompanySeeder extends Seeder
             ],
         ];
 
+        
+
         foreach ($suppliers as $supplier) {
             DB::table('suppliers')->insert([
                 'company_id' => $company->id,
@@ -295,6 +297,84 @@ class CompanySeeder extends Seeder
                 'updated_at' => now(),
             ]);
         }
+
+        // lee la migración de products y crea algunos productos de ejemplo minimo 4 
+        // toma como modelo los campos de la migración de productos para crear los productos
+        $products = [
+            [
+                'company_id' => $company->id,
+                'category_id' => 1,
+                'unit_measure_id' => 1,
+                'barcode' => '1234567890123',
+                'name' => 'Martillo de Acero',
+                'description' => 'Martillo resistente para uso general.',
+                'brand' => 'FerroTools',
+                'model' => 'FT-HM100',
+                'base_price' => 15.00,
+                'usd_price' => 0.42,
+                'cost' => 10.00,
+                'min_stock' => 20,
+                'current_stock' => 50,
+                'is_active' => true,
+            ],
+            [
+                'company_id' => $company->id,
+                'category_id' => 1,
+                'unit_measure_id' => 1,
+                'barcode' => '2345678901234',
+                'name' => 'Destornillador Phillips',
+                'description' => 'Destornillador de alta calidad para tornillos Phillips.',
+                'brand' => 'ToolMaster',
+                'model' => 'TM-DS200',
+                'base_price' => 8.00,
+                'usd_price' => 0.22,
+                'cost' => 5.00,
+                'min_stock' => 30,
+                'current_stock' => 80,
+                'is_active' => true,
+            ],
+            [
+                'company_id' => $company->id,
+                'category_id' => 2,
+                'unit_measure_id' => 1,
+                'barcode' => '3456789012345',
+                'name' => 'Taladro Eléctrico 500W',
+                'description' => 'Taladro potente para trabajos de perforación.',
+                'brand' => 'PowerDrill',
+                'model' => 'PD-500W',
+                'base_price' => 75.00,
+                'usd_price' => 2.10,
+                'cost' => 50.00,
+                'min_stock' => 10,
+                'current_stock' => 25,
+                'is_active' => true,
+            ],
+            [
+                'company_id' => $company->id,
+                'category_id' => 3,
+                'unit_measure_id' => 1,
+                'barcode' => '4567890123456',
+                'name' => 'Cemento Portland 50kg',
+                'description' => 'Cemento de alta resistencia para construcción.',
+                'brand' => 'ConstruMix',
+                'model' => 'CMX-50',
+                'base_price' => 12.00,
+                'usd_price' => 0.34,
+                'cost' => 8.00,
+                'min_stock' => 100,
+                'current_stock' => 200,
+                'is_active' => true,
+            ]             
+        ];
+
+        foreach ($products as $product) {
+            DB::table('products')->insert(array_merge($product, [
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]));
+        }
+
+        
 
         // Reactivar restricciones de clave foránea
         DB::statement('SET FOREIGN_KEY_CHECKS=1');

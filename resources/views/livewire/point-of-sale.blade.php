@@ -8,7 +8,7 @@
                         <h5 class="mb-0">Búsqueda de Productos</h5>
                     </div>
                     <div class="card-body">
-                        <input type="text" wire:model.live.debounce.300ms="productSearch" class="form-control"
+                        <input type="text" id="productSearch" wire:model.live.debounce.300ms="productSearch" class="form-control"
                             placeholder="Buscar producto por código o nombre...">
                         <!-- Product Search Results -->
                         @if (!empty($productSearch) && count($products) > 0)
@@ -280,29 +280,41 @@
 @script
     <script>
         document.addEventListener('livewire:initialized', () => {
+            // Listener for product search focus
+            Livewire.on('focus-product-search', () => {
+               let input = document.getElementById('productSearch');
+               if (input) {
+                   input.focus();
+                   input.select();
+               }
+           });
+
+            // Modal related logic
             const customerModalEl = document.getElementById('customerModal');
-            let customerModal;
+            if (customerModalEl) {
+                let customerModal;
 
-            // Ensure Bootstrap Modal is initialized only once.
-            customerModalEl.addEventListener('shown.bs.modal', () => {
-                if (!customerModal) {
-                    customerModal = bootstrap.Modal.getInstance(customerModalEl);
-                }
-            });
+                // Ensure Bootstrap Modal is initialized only once.
+                customerModalEl.addEventListener('shown.bs.modal', () => {
+                    if (!customerModal) {
+                        customerModal = bootstrap.Modal.getInstance(customerModalEl);
+                    }
+                });
 
-            Livewire.on('show-customer-modal', () => {
-                // Use the getter to be safe, or initialize a new one.
-                if (!customerModal) {
-                    customerModal = new bootstrap.Modal(customerModalEl);
-                }
-                customerModal.show();
-            });
+                Livewire.on('show-customer-modal', () => {
+                    // Use the getter to be safe, or initialize a new one.
+                    if (!customerModal) {
+                        customerModal = new bootstrap.Modal(customerModalEl);
+                    }
+                    customerModal.show();
+                });
 
-            Livewire.on('hide-customer-modal', () => {
-                if (customerModal) {
-                    customerModal.hide();
-                }
-            });
+                Livewire.on('hide-customer-modal', () => {
+                    if (customerModal) {
+                        customerModal.hide();
+                    }
+                });
+            }
         });
     </script>
 @endscript

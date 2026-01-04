@@ -21,12 +21,10 @@ return new class extends Migration
             $table->enum('payment_currency', ['BS', 'USD'])->default('BS');
             $table->enum('payment_method', ['EFECTIVO', 'DEBITO','TRANSFERENCIA', 'PAGO_MOVIL', 'ZELLE', 'BANESCO_PANAMA', 'OTRO'])->default('DEBITO');
             $table->enum('payment_type', ['EFECTIVO', 'CREDITO'])->default('EFECTIVO');
-            $table->decimal('exchange_rate', 10, 4);
-            $table->decimal('subtotal_local', 12, 2);
-            $table->decimal('subtotal_usd', 12, 2);
-            $table->decimal('tax_local', 12, 2)->default(0.00);
-            $table->decimal('total_local', 12, 2);
-            $table->decimal('total_usd', 12, 2);
+            $table->decimal('exchange_rate', 10, 4);            
+            $table->decimal('subtotal_usd', 12, 2)->default(0.00);
+            $table->decimal('tax_usd', 12, 2)->default(0.00);            
+            $table->decimal('total_usd', 12, 2)->default(0.00);
             $table->decimal('pending_balance', 12, 2)->default(0.00);
             $table->enum('status', ['pending', 'completed', 'cancelled', 'credit'])->default('pending');
             $table->text('notes')->nullable();

@@ -104,13 +104,7 @@ class PointOfSale extends Component
         $this->customerSearch = $this->selectedCustomer->name; // Display selected customer name
         $this->customers = []; // Clear search results
     }
-
-    // public function openCustomerModal()
-    // {
-    //     $this->reset('newCustomer');
-    //     $this->dispatch('show-customer-modal');
-    // }
-
+   
     //guardar cliente
     public function storeCustomer()
     {
@@ -180,6 +174,7 @@ class PointOfSale extends Component
                 $this->saleItems[$index]['quantity'] += $this->quantity;
                 $this->calculateTotals();
                 $this->reset('productSearch', 'products', 'quantity');
+                $this->dispatch('focus-product-search');
                 return;
             }
         }
@@ -204,6 +199,7 @@ class PointOfSale extends Component
 
         $this->calculateTotals();
         $this->reset('productSearch', 'products', 'quantity');
+        $this->dispatch('focus-product-search');
     }
 
     public function updateQuantity($index, $quantity)
@@ -228,12 +224,14 @@ class PointOfSale extends Component
         }
 
         $this->calculateTotals();
+        $this->dispatch('focus-product-search');
     }
 
     public function removeItem($index)
     {
         array_splice($this->saleItems, $index, 1);
         $this->calculateTotals();
+        $this->dispatch('focus-product-search');
     }
 
     public function calculateTotals()
@@ -243,8 +241,11 @@ class PointOfSale extends Component
             $this->subtotal += $item['quantity'] * $item['price'];
         }
 
+        // extrae la tax_rate de la compañia autenticada
+        $company = Auth::user()->company;
+        $taxRate = $company->tax_rate / 100; // Convert to decimal
         // Assuming a fixed tax rate for now, e.g., 16%
-        $this->tax = $this->subtotal * 0.16;
+        $this->tax = $this->subtotal * $taxRate;
         $this->total = $this->subtotal + $this->tax;
     }
 
@@ -264,13 +265,23 @@ class PointOfSale extends Component
             // Create the sale
             $sale = Sale::create([
                 'company_id' => Auth::user()->company_id,
-                'user_id' => Auth::id(),
+                'invoice_number' => $this->generateInvoiceNumber(),
                 'customer_id' => $this->selectedCustomerId,
-                'total_amount' => $this->total,
-                'subtotal' => $this->subtotal,
-                'tax_amount' => $this->tax,
-                'sale_date' => now(),
+                'seller_id' => Auth::id(),
+                'cashier_id' => Auth::id(),
+                'payment_currency' => $this->payment_currency,
+                'payment_method' => $this->payment_method,
+                'payment_type' => $this->payment_type,
+                'exchange_rate' => $this->exchange_rate,                
+                'subtotal_usd' => $this->subtotal,
+                'tax_usd' => $this->tax * $this->exchange_rate,                
+                'total_usd' => $this->total,
+                'pending_balance' => $this->total,
+                'status' => 'pending',
+                'notes' => '',            
+                
             ]);
+               
 
             foreach ($this->saleItems as $item) {
                 // Create sale item
@@ -278,8 +289,8 @@ class PointOfSale extends Component
                     'sale_id' => $sale->id,
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'subtotal' => $item['quantity'] * $item['price'],
+                    'unit_price' => $item['price'],                    
+                    'subtotal_usd' => $item['quantity'] * $item['price'],
                 ]);
 
                 // Update product stock and record inventory movement
@@ -295,7 +306,7 @@ class PointOfSale extends Component
             }
 
             session()->flash('message', 'Venta finalizada exitosamente. Imprimiendo ticket...');
-            $this->dispatch('print-ticket', saleId: $sale->id);
+            //$this->dispatch('print-ticket', saleId: $sale->id);
             $this->resetComponent();
         });
     }
@@ -339,13 +350,14 @@ class PointOfSale extends Component
             InventoryMovement::create([
                 'company_id' => Auth::user()->company_id,
                 'product_id' => $product->id,
-                'user_id' => $userId,
                 'movement_type' => $movementType,
                 'quantity' => $quantity,
-                'current_stock_before' => $product->current_stock + ($movementType === 'out' ? $quantity : -$quantity), // Assuming the decrement/increment happened
-                'current_stock_after' => $product->current_stock,
                 'reference_id' => $referenceId,
-                'reference_type' => $referenceType,
+                'reference_type' => 'sale',
+                'exchange_rate' => $this->exchange_rate,
+                'notes' => 'punto de venta',
+                'user_id' => $userId, 
+                
             ]);
         });
     }
@@ -362,6 +374,24 @@ class PointOfSale extends Component
         $this->abrirModalCliente = false;
 
     }
+
+    //crear funcion para tener un numero de factura unico por compañia
+    private function generateInvoiceNumber()
+    {
+        $lastSale = Sale::where('company_id', Auth::user()->company_id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($lastSale) {
+            $lastInvoiceNumber = intval($lastSale->invoice_number);
+            $newInvoiceNumber = str_pad($lastInvoiceNumber + 1, 6, '0', STR_PAD_LEFT);
+        } else {
+            $newInvoiceNumber = '000001';
+        }
+
+        return $newInvoiceNumber;
+    }
+
 
 
     public function render()

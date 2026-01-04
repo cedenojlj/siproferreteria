@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->foreignId('product_id')->constrained()->onDelete('restrict');
             $table->enum('movement_type', ['in', 'out', 'adjustment']);
-            $table->integer('quantity');
+            $table->decimal('quantity', 10, 2);
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->enum('reference_type', ['sale', 'purchase', 'refund', 'adjustment'])->nullable();
             $table->decimal('exchange_rate', 10, 4)->nullable();

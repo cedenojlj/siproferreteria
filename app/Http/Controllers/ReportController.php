@@ -112,7 +112,7 @@ class ReportController extends Controller
         return $pdf->download('productos-mas-vendidos-' . date('Y-m-d') . '.pdf');
     }
 
-    /* public function showSaleTicket(Sale $sale, ThermalPrinterService $printerService)
+    public function showSaleTicket(Sale $sale, ThermalPrinterService $printerService)
     {
         // Cargar las relaciones necesarias
         $sale->load('customer', 'seller', 'saleItems.product');
@@ -125,7 +125,7 @@ class ReportController extends Controller
             'sale' => $sale,
             'formatted_ticket' => $formatted_ticket,
         ]);
-    } */
+    }
 
     /**
      * Genera un reporte en PDF de los productos más vendidos.
