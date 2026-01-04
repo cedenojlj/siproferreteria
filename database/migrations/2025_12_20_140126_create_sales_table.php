@@ -18,9 +18,9 @@ return new class extends Migration
             $table->foreignId('customer_id')->nullable()->constrained()->onDelete('set null');
             $table->foreignId('seller_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('cashier_id')->constrained('users')->onDelete('cascade');
-            $table->enum('payment_currency', ['BS', 'USD']);
-            $table->enum('payment_method', ['CASH', 'WIRE_TRANSFER', 'MOBILE_PAYMENT', 'ZELLE', 'BANESCO_PANAMA', 'OTHER'])->default('CASH');
-            $table->enum('payment_type', ['cash', 'credit'])->default('cash');
+            $table->enum('payment_currency', ['BS', 'USD'])->default('BS');
+            $table->enum('payment_method', ['EFECTIVO', 'DEBITO','TRANSFERENCIA', 'PAGO_MOVIL', 'ZELLE', 'BANESCO_PANAMA', 'OTRO'])->default('DEBITO');
+            $table->enum('payment_type', ['EFECTIVO', 'CREDITO'])->default('EFECTIVO');
             $table->decimal('exchange_rate', 10, 4);
             $table->decimal('subtotal_local', 12, 2);
             $table->decimal('subtotal_usd', 12, 2);

@@ -29,270 +29,343 @@ class PointOfSale extends Component
     public $total = 0;
 
     public $quantity = 1; // Default quantity for adding product
-            public $showCustomerModal = false; // For creating new customer
-        
-            // New customer properties
-            public $newCustomer = [
-                'name' => '',
-                'document_number' => '',
-                'address' => '',
-                'phone' => '',
-                'email' => '',
-            ];
-        
-            protected $rules = [
-                'newCustomer.name' => 'required|string|max:255',
-                'newCustomer.document_number' => 'nullable|string|max:255|unique:customers,document_number',
-                'newCustomer.address' => 'nullable|string|max:255',
-                'newCustomer.phone' => 'nullable|string|max:20',
-                'newCustomer.email' => 'nullable|email|max:255',
-            ];
-        
-            public function mount()
-            {
-                $this->customers = Customer::where('company_id', Auth::user()->company_id)->get();
-                $this->calculateTotals(); // Initialize totals
-            }
-        
-            public function updatedCustomerSearch()
-            {
-                if (empty($this->customerSearch)) {
-                    $this->customers = Customer::where('company_id', Auth::user()->company_id)->get();
-                    return;
-                }
-        
-                $this->customers = Customer::where('company_id', Auth::user()->company_id)
-                    ->where(function ($query) {
-                        $query->where('name', 'like', '%' . $this->customerSearch . '%')
-                            ->orWhere('document', 'like', '%' . $this->customerSearch . '%');
-                            
-                    })
-                    ->get();
-            }
-        
-            public function selectCustomer($customerId)
-            {
-                $this->selectedCustomerId = $customerId;
-                $this->selectedCustomer = Customer::find($customerId);
-                $this->customerSearch = $this->selectedCustomer->name; // Display selected customer name
-                $this->customers = []; // Clear search results
-            }
-        
-            public function storeCustomer()
-            {
-                $this->validate();
-        
-                $customer = Customer::create([
-                    'company_id' => Auth::user()->company_id,
-                    'name' => $this->newCustomer['name'],
-                    'document_number' => $this->newCustomer['document_number'],
-                    'address' => $this->newCustomer['address'],
-                    'phone' => $this->newCustomer['phone'],
-                    'email' => $this->newCustomer['email'],
-                ]);
-        
-                $this->selectCustomer($customer->id);
-                $this->reset('newCustomer'); // Clear the form
-                $this->dispatch('hide-customer-modal');
-                session()->flash('message', 'Cliente creado exitosamente.');
-            }
-        
-            public function updatedProductSearch()
-            {
-                if (empty($this->productSearch)) {
-                    $this->products = [];
-                    return;
-                }
-        
-                $this->products = Product::where('company_id', Auth::user()->company_id)
-                    ->where(function ($query) {
-                        $query->where('name', 'like', '%' . $this->productSearch . '%')
-                            ->orWhere('barcode', 'like', '%' . $this->productSearch . '%');
-                    })
-                    ->get();
-            }
-        
-            public function addProduct($productId)
-            {
-                $product = Product::find($productId);
-        
-                if (!$product) {
-                    session()->flash('error', 'Producto no encontrado.');
-                    return;
-                }
-        
-                // Check inventory
-                if ($product->current_stock < 1) { // Assuming current_stock is the field
-                    session()->flash('error', 'Stock insuficiente para ' . $product->name);
-                    return;
-                }
-        
-                // Check if product already in cart
-                foreach ($this->saleItems as $index => $item) {
-                    if ($item['product_id'] == $productId) {
-                        if (($item['quantity'] + $this->quantity) > $product->current_stock) {
-                            session()->flash('error', 'No hay suficiente stock para añadir más de ' . $product->name);
-                            return;
-                        }
-                        $this->saleItems[$index]['quantity'] += $this->quantity;
-                        $this->calculateTotals();
-                        $this->reset('productSearch', 'products', 'quantity');
-                        return;
-                    }
-                }
-        
-                // Add new product to cart
-                $this->saleItems[] = [
-                    'product_id' => $product->id,
-                    'name' => $product->name,
-                    'price' => $product->price,
-                    'quantity' => $this->quantity,
-                ];
-        
-                $this->calculateTotals();
-                $this->reset('productSearch', 'products', 'quantity');
-            }
-        
-            public function updateQuantity($index, $quantity)
-            {
-                $quantity = max(1, (int) $quantity); // Ensure quantity is at least 1
-        
-                $product = Product::find($this->saleItems[$index]['product_id']);
-        
-                if ($quantity > $product->current_stock) {
-                    session()->flash('error', 'No hay suficiente stock. Máximo disponible: ' . $product->current_stock);
-                    $this->saleItems[$index]['quantity'] = $product->current_stock; // Revert to max available
-                } else {
-                    $this->saleItems[$index]['quantity'] = $quantity;
-                }
-        
-                $this->calculateTotals();
-            }
-        
-            public function removeItem($index)
-            {
-                array_splice($this->saleItems, $index, 1);
-                $this->calculateTotals();
-            }
-        
-            public function calculateTotals()
-            {
-                $this->subtotal = 0;
-                foreach ($this->saleItems as $item) {
-                    $this->subtotal += $item['quantity'] * $item['price'];
-                }
-        
-                // Assuming a fixed tax rate for now, e.g., 16%
-                $this->tax = $this->subtotal * 0.16;
-                $this->total = $this->subtotal + $this->tax;
-            }
-        
-            public function finalizeSale()
-            {
-                if (!$this->selectedCustomer) {
-                    session()->flash('error', 'Debe seleccionar un cliente para finalizar la venta.');
-                    return;
-                }
-        
-                if (count($this->saleItems) == 0) {
-                    session()->flash('error', 'No hay productos en el carrito para finalizar la venta.');
-                    return;
-                }
-        
-                DB::transaction(function () {
-                    // Create the sale
-                    $sale = Sale::create([
-                        'company_id' => Auth::user()->company_id,
-                        'user_id' => Auth::id(),
-                        'customer_id' => $this->selectedCustomerId,
-                        'total_amount' => $this->total,
-                        'subtotal' => $this->subtotal,
-                        'tax_amount' => $this->tax,
-                        'sale_date' => now(),
-                    ]);
-        
-                    foreach ($this->saleItems as $item) {
-                        // Create sale item
-                        SaleItem::create([
-                            'sale_id' => $sale->id,
-                            'product_id' => $item['product_id'],
-                            'quantity' => $item['quantity'],
-                            'price' => $item['price'],
-                            'subtotal' => $item['quantity'] * $item['price'],
-                        ]);
-        
-                        // Update product stock and record inventory movement
-                        $product = Product::find($item['product_id']);
-                        $this->recordInventoryMovement(
-                            $product,
-                            Auth::id(),
-                            'out', // Movement type for sale
-                            $item['quantity'],
-                            $sale->id,
-                            Sale::class
-                        );
-                    }
-        
-                    session()->flash('message', 'Venta finalizada exitosamente. Imprimiendo ticket...');
-                    $this->dispatch('print-ticket', saleId: $sale->id);
-                    $this->resetComponent();
-                });
-            }
-        
-            public function cancelSale()
-            {
-                session()->flash('info', 'Venta cancelada.');
-                $this->resetComponent();
-            }
-        
-            private function resetComponent()
-            {
-                $this->reset([
-                    'customerSearch',
-                    'customers',
-                    'selectedCustomerId',
-                    'selectedCustomer',
-                    'productSearch',
-                    'products',
-                    'saleItems',
-                    'subtotal',
-                    'tax',
-                    'total',
-                    'quantity',
-                    'newCustomer',
-                ]);
-                $this->mount(); // Re-initialize customers and totals
-            }
-        
-            private function recordInventoryMovement(Product $product, $userId, $movementType, $quantity, $referenceId, $referenceType)
-            {
-                DB::transaction(function () use ($product, $userId, $movementType, $quantity, $referenceId, $referenceType) {
-                    // Update product stock
-                    if ($movementType === 'in') {
-                        $product->increment('current_stock', $quantity);
-                    } elseif ($movementType === 'out') {
-                        $product->decrement('current_stock', $quantity);
-                    }
-        
-                    // Create inventory movement record
-                    InventoryMovement::create([
-                        'company_id' => Auth::user()->company_id,
-                        'product_id' => $product->id,
-                        'user_id' => $userId,
-                        'movement_type' => $movementType,
-                        'quantity' => $quantity,
-                        'current_stock_before' => $product->current_stock + ($movementType === 'out' ? $quantity : -$quantity), // Assuming the decrement/increment happened
-                        'current_stock_after' => $product->current_stock,
-                        'reference_id' => $referenceId,
-                        'reference_type' => $referenceType,
-                    ]);
-                });
-            }
-        
-        
-            public function render()
-            {
-                return view('livewire.point-of-sale');
-            }
+
+    public $abrirModalCliente = false;
+
+    public $payment_currency='BS';
+    public $payment_method='DEBITO';
+    public $payment_type='EFECTIVO';
+    public $exchange_rate;
+
+    public $paymentCurrency=['BS', 'USD'];
+    public $paymentMethods=['EFECTIVO', 'DEBITO','TRANSFERENCIA', 'PAGO_MOVIL', 'ZELLE', 'BANESCO_PANAMA', 'OTRO']; 
+    public $paymentTypes=['EFECTIVO', 'CREDITO'];
+
+    // New customer properties
+    public $newCustomer = [
+        'name' => '',
+        'document' => '',
+        'address' => '',
+        'phone' => '',
+        'email' => '',
+    ];
+
+    protected $rules = [
+        'newCustomer.name' => 'required|string|max:255',
+        'newCustomer.document' => 'nullable|string|max:255|unique:customers,document',
+        'newCustomer.address' => 'nullable|string|max:255',
+        'newCustomer.phone' => 'nullable|string|max:20',
+        'newCustomer.email' => 'nullable|email|max:255',
+    ];
+
+    public function mount()
+    {
+        $this->customers = Customer::where('company_id', Auth::user()->company_id)->get();
+        $this->calculateTotals(); // Initialize totals
+
+        //traer el ultimo tipo de cambio segun la compañia
+        $latestRate = DB::table('exchange_rates')
+            ->where('company_id', Auth::user()->company_id)
+            ->where('is_active', true)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($latestRate) {
+
+            $this->exchange_rate = $latestRate->rate;
+
+        } else {
+
+            $this->exchange_rate = 1;
         }
         
+        
+    }
+
+    public function updatedCustomerSearch()
+    {
+        if (empty($this->customerSearch)) {
+            $this->customers = Customer::where('company_id', Auth::user()->company_id)->get();
+            return;
+        }
+
+        $this->customers = Customer::where('company_id', Auth::user()->company_id)
+            ->where(function ($query) {
+                $query->where('name', 'like', '%' . $this->customerSearch . '%')
+                    ->orWhere('document', 'like', '%' . $this->customerSearch . '%');
+            })
+            ->get();
+    }
+
+    public function selectCustomer($customerId)
+    {
+        $this->selectedCustomerId = $customerId;
+        $this->selectedCustomer = Customer::find($customerId);
+        $this->customerSearch = $this->selectedCustomer->name; // Display selected customer name
+        $this->customers = []; // Clear search results
+    }
+
+    // public function openCustomerModal()
+    // {
+    //     $this->reset('newCustomer');
+    //     $this->dispatch('show-customer-modal');
+    // }
+
+    //guardar cliente
+    public function storeCustomer()
+    {
+        $this->validate();
+
+        $customer = Customer::create([
+            'company_id' => Auth::user()->company_id,
+            'name' => $this->newCustomer['name'],
+            'document' => $this->newCustomer['document'],
+            'address' => $this->newCustomer['address'],
+            'phone' => $this->newCustomer['phone'],
+            'email' => $this->newCustomer['email'],
+        ]);
+
+        $this->selectCustomer($customer->id);
+        $this->reset('newCustomer'); // Clear the form
+        $this->cerrarClienteModal(); // Close the modal
+        session()->flash('message', 'Cliente creado exitosamente.');
+    }
+
+    //crear funcion de cambiar cliente colocando la propiedad a null
+    public function cambiarCliente()
+    {
+        $this->selectedCustomerId = null;
+        $this->selectedCustomer = null;
+        $this->customerSearch = '';
+        $this->customers = Customer::where('company_id', Auth::user()->company_id)->get();
+    }
+
+    public function updatedProductSearch()
+    {
+        if (empty($this->productSearch)) {
+            $this->products = [];
+            return;
+        }
+
+        $this->products = Product::where('company_id', Auth::user()->company_id)
+            ->where(function ($query) {
+                $query->where('name', 'like', '%' . $this->productSearch . '%')
+                    ->orWhere('barcode', 'like', '%' . $this->productSearch . '%');
+            })
+            ->get();
+    }
+
+    public function addProduct($productId)
+    {
+        $product = Product::find($productId);
+
+        if (!$product) {
+            session()->flash('error', 'Producto no encontrado.');
+            return;
+        }
+
+        // Check inventory
+        if ($product->current_stock < 1) { // Assuming current_stock is the field
+            session()->flash('error', 'Stock insuficiente para ' . $product->name);
+            return;
+        }
+
+        // Check if product already in cart
+        foreach ($this->saleItems as $index => $item) {
+            if ($item['product_id'] == $productId) {
+                if (($item['quantity'] + $this->quantity) > $product->current_stock) {
+                    session()->flash('error', 'No hay suficiente stock para añadir más de ' . $product->name);
+                    return;
+                }
+                $this->saleItems[$index]['quantity'] += $this->quantity;
+                $this->calculateTotals();
+                $this->reset('productSearch', 'products', 'quantity');
+                return;
+            }
+        }
+
+        if ($this->payment_currency == 'BS') {
+
+            $precio_item = $product->base_price;
+
+        } else {
+
+            $precio_item = $product->usd_price;            
+        } 
+        
+
+        // Add new product to cart
+        $this->saleItems[] = [
+            'product_id' => $product->id,
+            'name' => $product->name,
+            'price' => $precio_item,
+            'quantity' => $this->quantity,
+        ];
+
+        $this->calculateTotals();
+        $this->reset('productSearch', 'products', 'quantity');
+    }
+
+    public function updateQuantity($index, $quantity)
+    {
+       //valida que la cantidad sea un numero y que sea mayor a 0
+       if (!is_numeric($quantity) || $quantity <= 0) {
+            session()->flash('error', 'Cantidad inválida.');
+            return;
+        }
+       
+        $quantity = max(1, (float) $quantity); // Ensure quantity is at least 1
+
+        $product = Product::find($this->saleItems[$index]['product_id']);
+
+        //dd( $product);
+
+        if ($quantity > $product->current_stock) {
+            session()->flash('error', 'No hay suficiente stock. Máximo disponible: ' . $product->current_stock);
+            $this->saleItems[$index]['quantity'] = $product->current_stock; // Revert to max available
+        } else {
+            $this->saleItems[$index]['quantity'] = $quantity;
+        }
+
+        $this->calculateTotals();
+    }
+
+    public function removeItem($index)
+    {
+        array_splice($this->saleItems, $index, 1);
+        $this->calculateTotals();
+    }
+
+    public function calculateTotals()
+    {
+        $this->subtotal = 0;
+        foreach ($this->saleItems as $item) {
+            $this->subtotal += $item['quantity'] * $item['price'];
+        }
+
+        // Assuming a fixed tax rate for now, e.g., 16%
+        $this->tax = $this->subtotal * 0.16;
+        $this->total = $this->subtotal + $this->tax;
+    }
+
+    public function finalizeSale()
+    {
+        if (!$this->selectedCustomer) {
+            session()->flash('error', 'Debe seleccionar un cliente para finalizar la venta.');
+            return;
+        }
+
+        if (count($this->saleItems) == 0) {
+            session()->flash('error', 'No hay productos en el carrito para finalizar la venta.');
+            return;
+        }
+
+        DB::transaction(function () {
+            // Create the sale
+            $sale = Sale::create([
+                'company_id' => Auth::user()->company_id,
+                'user_id' => Auth::id(),
+                'customer_id' => $this->selectedCustomerId,
+                'total_amount' => $this->total,
+                'subtotal' => $this->subtotal,
+                'tax_amount' => $this->tax,
+                'sale_date' => now(),
+            ]);
+
+            foreach ($this->saleItems as $item) {
+                // Create sale item
+                SaleItem::create([
+                    'sale_id' => $sale->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'subtotal' => $item['quantity'] * $item['price'],
+                ]);
+
+                // Update product stock and record inventory movement
+                $product = Product::find($item['product_id']);
+                $this->recordInventoryMovement(
+                    $product,
+                    Auth::id(),
+                    'out', // Movement type for sale
+                    $item['quantity'],
+                    $sale->id,
+                    Sale::class
+                );
+            }
+
+            session()->flash('message', 'Venta finalizada exitosamente. Imprimiendo ticket...');
+            $this->dispatch('print-ticket', saleId: $sale->id);
+            $this->resetComponent();
+        });
+    }
+
+    public function cancelSale()
+    {
+        session()->flash('info', 'Venta cancelada.');
+        $this->resetComponent();
+    }
+
+    private function resetComponent()
+    {
+        $this->reset([
+            'customerSearch',
+            'customers',
+            'selectedCustomerId',
+            'selectedCustomer',
+            'productSearch',
+            'products',
+            'saleItems',
+            'subtotal',
+            'tax',
+            'total',
+            'quantity',
+            'newCustomer',
+        ]);
+        $this->mount(); // Re-initialize customers and totals
+    }
+
+    private function recordInventoryMovement(Product $product, $userId, $movementType, $quantity, $referenceId, $referenceType)
+    {
+        DB::transaction(function () use ($product, $userId, $movementType, $quantity, $referenceId, $referenceType) {
+            // Update product stock
+            if ($movementType === 'in') {
+                $product->increment('current_stock', $quantity);
+            } elseif ($movementType === 'out') {
+                $product->decrement('current_stock', $quantity);
+            }
+
+            // Create inventory movement record
+            InventoryMovement::create([
+                'company_id' => Auth::user()->company_id,
+                'product_id' => $product->id,
+                'user_id' => $userId,
+                'movement_type' => $movementType,
+                'quantity' => $quantity,
+                'current_stock_before' => $product->current_stock + ($movementType === 'out' ? $quantity : -$quantity), // Assuming the decrement/increment happened
+                'current_stock_after' => $product->current_stock,
+                'reference_id' => $referenceId,
+                'reference_type' => $referenceType,
+            ]);
+        });
+    }
+
+    public function abrirClienteModal()  {
+        
+        $this->abrirModalCliente = true;
+
+    }
+
+    //cerrar modal cliente
+    public function cerrarClienteModal()  {
+        
+        $this->abrirModalCliente = false;
+
+    }
+
+
+    public function render()
+    {
+        return view('livewire.point-of-sale');
+    }
+}
