@@ -42,9 +42,8 @@ class ThermalPrinterService
         }
         
         $this->printer->text("================================\n");
-        $this->printer->text("Subtotal: {$sale->subtotal_local} BS\n");
-        $this->printer->text("IVA: {$sale->tax_local} BS\n");
-        $this->printer->text("TOTAL: {$sale->total_local} BS\n");
+        $this->printer->text("Subtotal: {$sale->subtotal_usd} BS\n");
+        $this->printer->text("IVA: {$sale->tax} BS\n");        
         $this->printer->text("Tasa: {$sale->exchange_rate} BS/USD\n");
         $this->printer->text("TOTAL USD: {$sale->total_usd}\n");
         

@@ -312,7 +312,7 @@ class PointOfSale extends Component
             }
 
             session()->flash('message', 'Venta finalizada exitosamente. Imprimiendo ticket...');
-            //$this->dispatch('print-ticket', saleId: $sale->id);
+            $this->dispatch('print-ticket', saleId: $sale->id);
             $this->resetComponent();
         });
     }
