@@ -212,6 +212,34 @@
         </div>
     </div>
 
+    @if ($lastSaleId)
+        <div class="modal fade show" style="display: block; background-color: rgba(0,0,0,0.5);" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Venta Finalizada</h5>
+                    </div>
+                    <div class="modal-body text-center">
+                        @if (session()->has('message'))
+                            <div class="alert alert-success">
+                                {{ session('message') }}
+                            </div>
+                        @endif
+                        <p>¿Qué desea hacer a continuación?</p>
+                    </div>
+                    <div class="modal-footer d-flex justify-content-center">
+                        <a href="{{ route('sales.ticket', $lastSaleId) }}" target="_blank" class="btn btn-primary">
+                             Ver / Imprimir Ticket
+                        </a>
+                        <button wire:click="startNewSale" class="btn btn-secondary">
+                            Nueva Venta
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if ($abrirModalCliente)
         <!-- Customer Creation Modal -->
         <div class="modal fade show" id="customerModal" tabindex="-1" aria-hidden="false" style="display: block;">

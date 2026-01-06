@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class PointOfSale extends Component
 {
-
+    public $lastSaleId = null;
     public $customerSearch = '';
     public $customers = [];
     public $selectedCustomerId;
@@ -311,10 +311,16 @@ class PointOfSale extends Component
                 );
             }
 
-            session()->flash('message', 'Venta finalizada exitosamente. Imprimiendo ticket...');
-            $this->dispatch('print-ticket', saleId: $sale->id);
-            $this->resetComponent();
+            // Asignar el ID de la venta para el botón de imprimir
+            $this->lastSaleId = $sale->id;
+            session()->flash('message', 'Venta finalizada exitosamente.');
+
         });
+    }
+
+    public function startNewSale()
+    {
+        $this->resetComponent();
     }
 
     public function cancelSale()
@@ -326,6 +332,7 @@ class PointOfSale extends Component
     private function resetComponent()
     {
         $this->reset([
+            'lastSaleId',
             'customerSearch',
             'customers',
             'selectedCustomerId',

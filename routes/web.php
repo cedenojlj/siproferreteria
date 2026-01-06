@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\TicketController;
 use App\Livewire\ProductManager;
 use App\Models\Purchase;
 
@@ -102,4 +103,5 @@ Route::middleware(['auth', 'web'])->group(function () {
         ->name('roles.permissions.manager');
 
     Route::get('/tickets/sale/{sale}', [ReportController::class, 'showSaleTicket'])->name('tickets.sale');
+    Route::get('/sales/{sale}/ticket', [TicketController::class, 'generateTicket'])->name('sales.ticket');
 });
