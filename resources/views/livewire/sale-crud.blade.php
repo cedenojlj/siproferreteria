@@ -73,7 +73,7 @@
 
     <!-- Modal de Edición de Venta -->
     @if($isModalOpen)
-    <div class="modal d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal d-block" wire:ignore.self tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
         <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -100,7 +100,7 @@
                             </div>
                         </div>
 
-                        {{-- <div class="row">
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="seller_id" class="form-label">Vendedor:</label>
                                 <select class="form-select @error('seller_id') is-invalid @enderror" id="seller_id" wire:model="seller_id">
@@ -121,7 +121,7 @@
                                 </select>
                                 @error('cashier_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
-                        </div> --}}
+                        </div>
 
                         <div class="row">
                             <div class="col-md-4 mb-3">

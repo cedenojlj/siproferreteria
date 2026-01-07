@@ -126,6 +126,11 @@ class SaleCrud extends Component
     public function edit($id)
     {
         $company_id = Auth::user()->company_id;
+        
+        // Re-fetch customers and users to ensure data is fresh
+        $this->customers = Customer::where('company_id', $company_id)->orderBy('name')->get(['id', 'name']);
+        $this->users = User::where('company_id', $company_id)->orderBy('name')->get(['id', 'name']);
+
         $sale = Sale::where('company_id', $company_id)
                     ->with(['saleItems.product'])
                     ->findOrFail($id);
