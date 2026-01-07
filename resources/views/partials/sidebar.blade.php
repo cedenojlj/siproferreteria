@@ -49,10 +49,18 @@
             <i class="bi bi-truck"></i> Proveedores
         </a>
     </li>
+    <li class="nav-item mt-2">
+        <h6 class="text-secondary ps-3">Operaciones</h6>
+    </li>
 
     <li class="nav-item">
+        <a class="nav-link text-white" href="{{ route('ventas') }}">
+            <i class="bi bi-cart4"></i> Ventas
+        </a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link text-white" href="{{ route('ventas_pos') }}">
-            <i class="bi bi-truck"></i> Ventas
+            <i class="bi bi-truck"></i> POS
         </a>
     </li>
 

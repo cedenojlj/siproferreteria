@@ -32,7 +32,7 @@
                     <th>Cliente</th>
                     <th>Vendedor</th>
                     <th>Cajero</th>
-                    <th>Total (Local)</th>
+                    <th>Total (USD)</th>
                     <th>Estado</th>
                     <th>Fecha</th>
                     <th>Acciones</th>
@@ -46,11 +46,11 @@
                     <td>{{ $sale->customer->name ?? 'N/A' }}</td>
                     <td>{{ $sale->seller->name ?? 'N/A' }}</td>
                     <td>{{ $sale->cashier->name ?? 'N/A' }}</td>
-                    <td>{{ number_format($sale->total_local, 2) }} {{ $sale->payment_currency }}</td>
+                    <td>{{ number_format($sale->total_usd, 2) }}</td>
                     <td><span class="badge {{
                         $sale->status == 'completed' ? 'bg-success' :
                         ($sale->status == 'pending' ? 'bg-warning text-dark' :
-                        ($sale->status == 'cancelled' ? 'bg-danger' : 'bg-info'))
+                        ($sale->status == 'cancelled' ? 'bg-danger' : 'bg-info text-white'))
                     }}">{{ $sale->status }}</span></td>
                     <td>{{ $sale->created_at->format('Y-m-d H:i') }}</td>
                     <td>
@@ -100,7 +100,7 @@
                             </div>
                         </div>
 
-                        <div class="row">
+                        {{-- <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="seller_id" class="form-label">Vendedor:</label>
                                 <select class="form-select @error('seller_id') is-invalid @enderror" id="seller_id" wire:model="seller_id">
@@ -121,7 +121,7 @@
                                 </select>
                                 @error('cashier_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
-                        </div>
+                        </div> --}}
 
                         <div class="row">
                             <div class="col-md-4 mb-3">
@@ -135,20 +135,21 @@
                             <div class="col-md-4 mb-3">
                                 <label for="payment_method" class="form-label">Método de Pago:</label>
                                 <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" wire:model="payment_method">
-                                    <option value="CASH">Efectivo</option>
-                                    <option value="WIRE_TRANSFER">Transferencia</option>
-                                    <option value="MOBILE_PAYMENT">Pago Móvil</option>
+                                    <option value="EFECTIVO">Efectivo</option>
+                                    <option value="DEBITO">Débito</option>
+                                    <option value="TRANSFERENCIA">Transferencia</option>
+                                    <option value="PAGO_MOVIL">Pago Móvil</option>
                                     <option value="ZELLE">Zelle</option>
                                     <option value="BANESCO_PANAMA">Banesco Panamá</option>
-                                    <option value="OTHER">Otro</option>
+                                    <option value="OTRO">Otro</option>
                                 </select>
                                 @error('payment_method') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="payment_type" class="form-label">Tipo de Pago:</label>
-                                <select class="form-select @error('payment_type') is-invalid @enderror" id="payment_type" wire:model="payment_type">
-                                    <option value="cash">Contado</option>
-                                    <option value="credit">Crédito</option>
+                                <select class="form-select @error('payment_type') is-invalid @enderror" id="payment_type" wire:model.live="payment_type">
+                                    <option value="EFECTIVO">Contado</option>
+                                    <option value="CREDITO">Crédito</option>
                                 </select>
                                 @error('payment_type') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
@@ -161,42 +162,30 @@
                                 @error('exchange_rate') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label for="subtotal_local" class="form-label">Subtotal (Local):</label>
-                                <input type="number" step="0.01" class="form-control @error('subtotal_local') is-invalid @enderror" id="subtotal_local" wire:model="subtotal_local">
-                                @error('subtotal_local') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                            </div>
-                            <div class="col-md-4 mb-3">
                                 <label for="subtotal_usd" class="form-label">Subtotal (USD):</label>
-                                <input type="number" step="0.01" class="form-control @error('subtotal_usd') is-invalid @enderror" id="subtotal_usd" wire:model="subtotal_usd">
+                                <input type="number" step="0.01" class="form-control @error('subtotal_usd') is-invalid @enderror" id="subtotal_usd" wire:model="subtotal_usd" readonly>
                                 @error('subtotal_usd') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
+                             <div class="col-md-4 mb-3">
+                                <label for="tax" class="form-label">Impuesto (%):</label>
+                                <input type="number" step="0.01" class="form-control @error('tax') is-invalid @enderror" id="tax" wire:model.live="tax">
+                                @error('tax') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
                         </div>
 
                         <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="tax_local" class="form-label">Impuesto (Local):</label>
-                                <input type="number" step="0.01" class="form-control @error('tax_local') is-invalid @enderror" id="tax_local" wire:model="tax_local">
-                                @error('tax_local') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="total_local" class="form-label">Total (Local):</label>
-                                <input type="number" step="0.01" class="form-control @error('total_local') is-invalid @enderror" id="total_local" wire:model="total_local">
-                                @error('total_local') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                            </div>
                             <div class="col-md-4 mb-3">
                                 <label for="total_usd" class="form-label">Total (USD):</label>
-                                <input type="number" step="0.01" class="form-control @error('total_usd') is-invalid @enderror" id="total_usd" wire:model="total_usd">
+                                <input type="number" step="0.01" class="form-control @error('total_usd') is-invalid @enderror" id="total_usd" wire:model="total_usd" readonly>
                                 @error('total_usd') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="pending_balance" class="form-label">Saldo Pendiente:</label>
-                                <input type="number" step="0.01" class="form-control @error('pending_balance') is-invalid @enderror" id="pending_balance" wire:model="pending_balance">
+                                <input type="number" step="0.01" class="form-control @error('pending_balance') is-invalid @enderror" id="pending_balance" wire:model="pending_balance" readonly>
                                 @error('pending_balance') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
-                            <div class="col-md-6 mb-3">
+
+                            <div class="col-md-4 mb-3">
                                 <label for="status" class="form-label">Estado:</label>
                                 <select class="form-select @error('status') is-invalid @enderror" id="status" wire:model="status">
                                     <option value="pending">Pendiente</option>
@@ -208,10 +197,80 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="notes" class="form-label">Notas:</label>
-                            <textarea class="form-control @error('notes') is-invalid @enderror" id="notes" rows="3" wire:model="notes"></textarea>
-                            @error('notes') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="row">                            
+                             <div class="col-md-12 mb-3">
+                                <label for="notes" class="form-label">Notas:</label>
+                                <textarea class="form-control @error('notes') is-invalid @enderror" id="notes" rows="2" wire:model="notes"></textarea>
+                                @error('notes') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+                        </div>
+                        <hr>
+                        <h5 class="mt-4">Productos en esta Venta</h5>
+                        
+                        <!-- Product Search -->
+                        <div class="mb-3 position-relative">
+                            <label for="productSearch" class="form-label">Buscar y Agregar Producto:</label>
+                            <input type="text" id="productSearch" class="form-control" 
+                                   placeholder="Buscar por nombre o código de barras..." 
+                                   wire:model.live.debounce.300ms="productSearch">
+                            
+                            @if(count($this->productSearchResults))
+                                <ul class="list-group mt-1 position-absolute w-100" style="z-index: 1000;">
+                                    @foreach($this->productSearchResults as $product)
+                                        <li class="list-group-item list-group-item-action" 
+                                            wire:click="addProduct({{ $product->id }})"
+                                            style="cursor: pointer;">
+                                            {{ $product->name }} - ({{ $product->barcode }})
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th width="120px">Cantidad</th>
+                                        <th width="150px">Precio Unit.</th>
+                                        <th width="150px">Subtotal</th>
+                                        <th width="80px">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($saleItems as $index => $item)
+                                    <tr>
+                                        <td>
+                                            {{ $item['product_name'] ?? 'Producto no encontrado' }}
+                                            @error('saleItems.'.$index.'.product_id') <div class="text-danger text-sm">{{ $message }}</div> @enderror
+                                        </td>
+                                        <td>
+                                            <input type="number" wire:model.live="saleItems.{{ $index }}.quantity"
+                                                class="form-control form-control-sm @error('saleItems.'.$index.'.quantity') is-invalid @enderror" min="1">
+                                        </td>
+                                        <td>
+                                            <input type="number" wire:model.live="saleItems.{{ $index }}.unit_price"
+                                                class="form-control form-control-sm @error('saleItems.'.$index.'.unit_price') is-invalid @enderror" step="0.01" min="0">
+                                        </td>
+                                        <td>
+                                            <input type="text"
+                                                value="{{ number_format($item['subtotal_usd'], 2) }}"
+                                                class="form-control form-control-sm" readonly>
+                                        </td>
+                                        <td>
+                                            <button type="button" wire:click="removeProduct({{ $index }})"
+                                                class="btn btn-danger btn-sm">Quitar</button>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center">Aún no hay productos en esta venta.</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                            @error('saleItems') <div class="text-danger mt-2">{{ $message }}</div> @enderror
                         </div>
                     </div>
                     <div class="modal-footer">
