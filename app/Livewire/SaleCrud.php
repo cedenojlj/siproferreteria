@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Customer;
 use App\Models\User;
 use App\Models\Product;
+use App\Models\Payment;
 use App\Models\SaleItem;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
@@ -35,6 +36,19 @@ class SaleCrud extends Component
     // Product search for edit modal
     public $productSearch = '';
 
+    // View Modal
+    public $isViewModalOpen = false;
+    public ?Sale $viewSale = null;
+
+    // Payment Modal
+    public $isPaymentModalOpen = false;
+    public ?Sale $paymentSale = null;
+    public $payment_amount_usd;
+    public $payment_payment_method = 'CASH';
+    public $payment_reference;
+    public $payment_notes;
+
+
     protected $rules = [
         'invoice_number' => 'required|string|max:50',
         'customer_id' => 'nullable|exists:customers,id',
@@ -52,6 +66,17 @@ class SaleCrud extends Component
         'saleItems.*.quantity' => 'required|numeric|min:1',
         'saleItems.*.unit_price' => 'required|numeric|min:0',
     ];
+
+    protected function paymentRules()
+    {
+        return [
+            'payment_amount_usd' => 'required|numeric|min:0.01|max:' . $this->paymentSale?->pending_balance,
+            'payment_payment_method' => 'required|in:CASH,WIRE_TRANSFER,MOBILE_PAYMENT,ZELLE,BANESCO_PANAMA,OTHER',
+            'payment_reference' => 'nullable|string|max:100',
+            'payment_notes' => 'nullable|string',
+        ];
+    }
+
 
     #[Computed]
     public function productSearchResults()
@@ -201,7 +226,13 @@ class SaleCrud extends Component
             $subtotal = $sale->saleItems()->sum('subtotal_usd');
             $taxAmount = $subtotal * ($this->tax / 100);
             $total = $subtotal + $taxAmount;
-            $pending = ($this->payment_type === 'CREDITO') ? $total : 0;
+            
+            $payments_total = $sale->payments()->sum('amount_usd');
+            $pending = $total - $payments_total;
+            if ($this->payment_type !== 'CREDITO') {
+                $pending = 0;
+            }
+
 
             $sale->update([
                 'subtotal_usd' => $subtotal,
@@ -293,9 +324,75 @@ class SaleCrud extends Component
         $this->total_usd = $this->subtotal_usd + $taxAmount;
 
         if ($this->payment_type === 'CREDITO') {
-            $this->pending_balance = $this->total_usd;
+             $payments_total = $this->sale_id ? Sale::find($this->sale_id)->payments()->sum('amount_usd') : 0;
+             $this->pending_balance = $this->total_usd - $payments_total;
         } else {
             $this->pending_balance = 0;
         }
+    }
+
+    // View Modal
+    public function view($id)
+    {
+        $this->viewSale = Sale::with(['customer', 'seller', 'cashier', 'saleItems.product'])->findOrFail($id);
+        $this->isViewModalOpen = true;
+    }
+
+    public function closeViewModal()
+    {
+        $this->isViewModalOpen = false;
+        $this->viewSale = null;
+    }
+
+    // Payment Modal
+    public function openPaymentModal($id)
+    {
+        $sale = Sale::findOrFail($id);
+        if ($sale->pending_balance > 0) {
+            $this->paymentSale = $sale;
+            $this->payment_amount_usd = $sale->pending_balance;
+            $this->isPaymentModalOpen = true;
+        } else {
+            session()->flash('info', 'Esta venta no tiene saldo pendiente.');
+        }
+    }
+
+    public function closePaymentModal()
+    {
+        $this->isPaymentModalOpen = false;
+        $this->paymentSale = null;
+        $this->reset(['payment_amount_usd', 'payment_payment_method', 'payment_reference', 'payment_notes']);
+        $this->resetValidation();
+    }
+
+    public function storePayment()
+    {
+        $this->validate($this->paymentRules());
+
+        DB::transaction(function () {
+            $this->paymentSale->payments()->create([
+                'company_id' => $this->paymentSale->company_id,
+                'customer_id' => $this->paymentSale->customer_id,
+                'amount_local' => 0, // This should be calculated based on exchange rate
+                'amount_usd' => $this->payment_amount_usd,
+                'payment_method' => $this->payment_payment_method,
+                'reference' => $this->payment_reference,
+                'notes' => $this->payment_notes,
+                'user_id' => Auth::id(),
+            ]);
+
+            $new_pending_balance = $this->paymentSale->pending_balance - $this->payment_amount_usd;
+
+            $this->paymentSale->update([
+                'pending_balance' => $new_pending_balance,
+            ]);
+
+            if ($new_pending_balance <= 0) {
+                $this->paymentSale->update(['status' => 'completed']);
+            }
+        });
+
+        session()->flash('message', 'Pago registrado exitosamente.');
+        $this->closePaymentModal();
     }
 }
