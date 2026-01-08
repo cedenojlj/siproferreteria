@@ -48,6 +48,10 @@ class SaleCrud extends Component
     public $payment_reference;
     public $payment_notes;
 
+    // Payments List Modal
+    public $isPaymentsListModalOpen = false;
+    public $salePayments = [];
+
 
     protected $rules = [
         'invoice_number' => 'required|string|max:50',
@@ -394,5 +398,20 @@ class SaleCrud extends Component
 
         session()->flash('message', 'Pago registrado exitosamente.');
         $this->closePaymentModal();
+    }
+
+    // Payments List Modal
+    public function showPayments()
+    {
+        if ($this->paymentSale) {
+            $this->salePayments = $this->paymentSale->payments()->with('user')->latest()->get();
+            $this->isPaymentsListModalOpen = true;
+        }
+    }
+
+    public function closePaymentsListModal()
+    {
+        $this->isPaymentsListModalOpen = false;
+        $this->salePayments = [];
     }
 }

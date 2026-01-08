@@ -276,13 +276,74 @@
                             </select>
                              @error('payment_payment_method') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
-                        {{-- ... other payment fields --}}
+                        <div class="mb-3">
+                            <label for="payment_reference" class="form-label">Referencia</label>
+                            <input type="text" id="payment_reference" class="form-control @error('payment_reference') is-invalid @enderror" wire:model="payment_reference">
+                            @error('payment_reference') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="mb-3">
+                            <label for="payment_notes" class="form-label">Notas</label>
+                            <textarea id="payment_notes" class="form-control @error('payment_notes') is-invalid @enderror" wire:model="payment_notes" rows="2"></textarea>
+                            @error('payment_notes') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" wire:click="closePaymentModal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar Pago</button>
+                    <div class="modal-footer d-flex justify-content-between">
+                        <button type="button" class="btn btn-info" wire:click="showPayments">Ver Pagos</button>
+                        <div>
+                            <button type="button" class="btn btn-secondary" wire:click="closePaymentModal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar Pago</button>
+                        </div>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Modal de Lista de Pagos -->
+    @if($isPaymentsListModalOpen)
+    <div class="modal d-block" wire:ignore.self tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.6);">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Pagos para la Venta #{{ $paymentSale->invoice_number }}</h5>
+                    <button type="button" class="btn-close" wire:click="closePaymentsListModal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Monto (USD)</th>
+                                    <th>Método</th>
+                                    <th>Referencia</th>
+                                    <th>Registrado por</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($salePayments as $payment)
+                                <tr>
+                                    <td>{{ $payment->id }}</td>
+                                    <td>{{ $payment->created_at->format('Y-m-d H:i') }}</td>
+                                    <td>{{ number_format($payment->amount_usd, 2) }}</td>
+                                    <td>{{ $payment->payment_method }}</td>
+                                    <td>{{ $payment->reference ?? 'N/A' }}</td>
+                                    <td>{{ $payment->user->name ?? 'N/A' }}</td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="6" class="text-center">No hay pagos registrados para esta venta.</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" wire:click="closePaymentsListModal">Cerrar</button>
+                </div>
             </div>
         </div>
     </div>
