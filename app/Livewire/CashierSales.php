@@ -20,6 +20,8 @@ class CashierSales extends Component
     public $customer_id, $payment_method, $payment_type, $payment_currency, $status;
     public $saleItems = [];
     public $total_amount = 0;
+    public $search = '';
+    public $searchResults = [];
     protected $listeners = ['itemAdded' => 'handleItemAdded'];
 
 
@@ -36,6 +38,55 @@ class CashierSales extends Component
             'sales' => $sales,
             'customers' => $customers,
         ]);
+    }
+
+    public function updatedSearch()
+    {
+        if (strlen($this->search) >= 2) {
+            $this->searchResults = Product::where('name', 'like', '%' . $this->search . '%')
+                ->orWhere('barcode', 'like', '%' . $this->search . '%')
+                ->take(5)
+                ->get();
+        } else {
+            $this->searchResults = [];
+        }
+    }
+
+    public function handleItemAdded($productId)
+    {
+        $this->addProductToSale($productId);
+    }
+    
+    public function addProductToSale($productId)
+    {
+        $product = Product::find($productId);
+        if (!$product) {
+            return;
+        }
+
+        $existingItemIndex = -1;
+        foreach ($this->saleItems as $index => $item) {
+            if ($item['product_id'] == $productId) {
+                $existingItemIndex = $index;
+                break;
+            }
+        }
+
+        if ($existingItemIndex != -1) {
+            $this->saleItems[$existingItemIndex]['quantity']++;
+        } else {
+            $this->saleItems[] = [
+                'product_id' => $product->id,
+                'name'       => $product->name,
+                'quantity'   => 1,
+                'price'      => $product->base_price,
+                'subtotal'   => $product->base_price,
+            ];
+        }
+
+        $this->recalculateTotals();
+        $this->search = '';
+        $this->searchResults = [];
     }
 
     public function editSale($saleId)
@@ -63,7 +114,7 @@ class CashierSales extends Component
 
     public function cancelEdit()
     {
-        $this->reset(['isEditing', 'saleId', 'customer_id', 'payment_method', 'payment_type', 'payment_currency', 'status', 'saleItems', 'total_amount']);
+        $this->reset(['isEditing', 'saleId', 'customer_id', 'payment_method', 'payment_type', 'payment_currency', 'status', 'saleItems', 'total_amount', 'search', 'searchResults']);
     }
 
     public function removeItem($index)
@@ -109,7 +160,7 @@ class CashierSales extends Component
                 'payment_type' => $this->payment_type,
                 'payment_currency' => $this->payment_currency,
                 'status' => $this->status,
-                'total_amount' => $this->total_amount,
+                'total_usd' => $this->total_amount,
             ]);
 
             // Sync sale items
@@ -119,7 +170,8 @@ class CashierSales extends Component
                     'sale_id' => $sale->id,
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
-                    'price' => $item['price'],
+                    'unit_price' => $item['price'],
+                    'subtotal_usd' => $item['subtotal'],
                 ]);
             }
 
@@ -127,7 +179,7 @@ class CashierSales extends Component
             if ($this->status === 'completed' && $originalStatus !== 'completed') {
                 foreach ($this->saleItems as $item) {
                     $product = Product::find($item['product_id']);
-                    $product->decrement('stock', $item['quantity']);
+                    $product->decrement('current_stock', $item['quantity']);
 
                     InventoryMovement::create([
                         'product_id' => $item['product_id'],

@@ -15,7 +15,7 @@
                     <div>
                         <h4>Editando Venta #{{ $saleId }}</h4>
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="form-group">
                                     <label>Cliente</label>
                                     <select wire:model="customer_id" class="form-control">
@@ -25,27 +25,64 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="form-group">
                                     <label>Método de Pago</label>
                                     <select wire:model="payment_method" class="form-control">
-                                        <option value="cash">Efectivo</option>
-                                        <option value="card">Tarjeta</option>
-                                        <option value="transfer">Transferencia</option>
+                                        <option value="EFECTIVO">Efectivo</option>
+                                        <option value="DEBITO">Débito</option>
+                                        <option value="TRANSFERENCIA">Transferencia</option>
+                                        <option value="PAGO_MOVIL">Pago Móvil</option>
+                                        <option value="ZELLE">Zelle</option>
+                                        <option value="BANESCO_PANAMA">Banesco Panama</option>
+                                        <option value="OTRO">Otro</option> 
+                                    </select>
+                                </div>
+                            </div>                            
+                            
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Moneda de Pago</label>
+                                    <select wire:model="payment_currency" class="form-control">
+                                        <option value="BS">Bolívares (BS)</option>
+                                        <option value="USD">Dólares (USD)</option>                                        
                                     </select>
                                 </div>
                             </div>
-                             <div class="col-md-4">
+
+                            <div class="col-md-3">
                                 <div class="form-group">
                                     <label>Estado</label>
                                     <select wire:model="status" class="form-control">
-                                        <option value="pendiente">Pendiente</option>
+                                        <option value="pending">Pendiente</option>
                                         <option value="completed">Completada</option>
                                         <option value="cancelled">Cancelada</option>
+                                        <option value="credit">Credito</option>
                                     </select>
                                 </div>
                             </div>
+                               
                         </div>
+
+                       <div class="row mt-3">
+                                {{-- Buscador de productos --}}
+                            <div class="form-group">
+                                <label>Buscar Producto (Nombre o Código de Barras)</label>
+                                <input type="text" class="form-control" placeholder="Escanear o escribir..."
+                                    wire:model.live.debounce.300ms="search">
+                            </div>
+                       </div>
+
+                        @if(!empty($searchResults))
+                            <div class="list-group mb-3">
+                                @foreach($searchResults as $product)
+                                    <a href="#" class="list-group-item list-group-item-action"
+                                       wire:click.prevent="addProductToSale({{ $product->id }})">
+                                        <strong>{{ $product->name }}</strong> - ${{ number_format($product->base_price, 2) }}
+                                    </a>
+                                @endforeach
+                            </div>
+                        @endif
 
                         {{-- Lista de productos --}}
                         <h5 class="mt-4">Productos</h5>
