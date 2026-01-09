@@ -40,11 +40,11 @@
     <script>
         document.addEventListener('livewire:initialized', () => {
             Livewire.on('print-ticket', (event) => {
-                const saleId = event.saleId;
-                const url = `/tickets/sale/${saleId}`;
+                const saleId = event[0].saleId;
+                const url = `/tickets/cashier/${saleId}`;
                 const printWindow = window.open(url, '_blank', 'height=600,width=400');
                 printWindow.onload = function() {
-                    printWindow.print();
+                    // La impresión se maneja en la propia vista del ticket
                 };
             });
         });

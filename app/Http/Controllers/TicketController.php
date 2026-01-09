@@ -35,4 +35,12 @@ class TicketController extends Controller
         // Devolver el PDF para ser mostrado en el navegador
         return $pdf->stream('ticket_venta_' . $sale->id . '.pdf');
     }
+
+    public function showSaleTicketForCashier(Sale $sale)
+    {
+        $sale->load('saleItems.product', 'customer', 'seller', 'company');
+        $company = $sale->company;
+
+        return view('tickets.cashier_ticket', compact('sale', 'company'));
+    }
 }

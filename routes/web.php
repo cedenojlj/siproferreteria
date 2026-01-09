@@ -109,6 +109,6 @@ Route::middleware(['auth', 'web'])->group(function () {
         ->middleware('can:manage_roles')
         ->name('roles.permissions.manager');
 
-    Route::get('/tickets/sale/{sale}', [ReportController::class, 'showSaleTicket'])->name('tickets.sale');
     Route::get('/sales/{sale}/ticket', [TicketController::class, 'generateTicket'])->name('sales.ticket');
+    Route::get('/tickets/cashier/{sale}', [TicketController::class, 'showSaleTicketForCashier'])->name('tickets.cashier');
 });
