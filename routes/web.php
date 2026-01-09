@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TicketController;
 use App\Livewire\ProductManager;
+use App\Livewire\CashierSales;
 use App\Models\Purchase;
 
 Route::get('/', function () {
@@ -26,6 +27,7 @@ Route::get('/logout', function () {
 
 
 Route::middleware(['auth', 'web'])->group(function () {
+    //Route::get('/cashier', CashierSales::class)->name('cashier.sales');
     Route::get('/ventas/pos', \App\Livewire\PointOfSale::class)->name('sales.pos'); 
     Route::get('/productsmanager', \App\Livewire\ProductManager::class)->name('productsmanager'); 
     Route::get('/exchange-rates', \App\Livewire\ExchangeRateManager::class)->name('exchange-rates'); 
@@ -79,7 +81,12 @@ Route::middleware(['auth', 'web'])->group(function () {
     
      Route::get('/ventas_pos', function () {
         return view('ventasPos');
-    })->name('ventas_pos');   
+    })->name('ventas_pos');  
+    
+    Route::get('/cashier', function () {
+        return view('ventasCashier');
+    })->name('cashier_sales');  
+    
 
      Route::get('/mvt_inventory', function () {
         return view('inventory_movements');

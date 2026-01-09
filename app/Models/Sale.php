@@ -86,4 +86,10 @@ class Sale extends Model
     {
         return $this->hasMany(Refund::class);
     }
+
+    //user relation
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cashier_id');
+    }
 }

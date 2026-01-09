@@ -59,6 +59,11 @@
         </a>
     </li>
     <li class="nav-item">
+        <a class="nav-link text-white" href="{{ route('cashier_sales') }}">
+            <i class="bi bi-cash-stack"></i> Caja
+        </a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link text-white" href="{{ route('ventas_pos') }}">
             <i class="bi bi-truck"></i> POS
         </a>
