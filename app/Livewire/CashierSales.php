@@ -23,16 +23,28 @@ class CashierSales extends Component
     public $tax = 0;
     public $total = 0;
     public $search = '';
+    public $searchPending = ''; // Para buscar en ventas pendientes
     public $searchResults = [];
     protected $listeners = ['itemAdded' => 'handleItemAdded'];
 
 
     public function render()
     {
-        $sales = Sale::where('status', 'pending')
-            ->with('customer', 'user')
-            ->latest()
-            ->paginate(10);
+        $query = Sale::where('status', 'pending')
+            ->with('customer', 'user');
+
+        if (!empty($this->searchPending)) {
+            $query->where(function($q) {
+                $q->whereHas('customer', function ($subQuery) {
+                    $subQuery->where('name', 'like', '%' . $this->searchPending . '%')
+                             ->orWhere('document', 'like', '%' . $this->searchPending . '%');
+                })->orWhereHas('user', function ($subQuery) {
+                    $subQuery->where('name', 'like', '%' . $this->searchPending . '%');
+                });
+            });
+        }
+
+        $sales = $query->latest()->paginate(10);
         
         $customers = Customer::all();
 
