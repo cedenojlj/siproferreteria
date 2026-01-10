@@ -19,7 +19,9 @@ class CashierSales extends Component
     public $saleId;
     public $customer_id, $payment_method, $payment_type, $payment_currency, $status;
     public $saleItems = [];
-    public $total_amount = 0;
+    public $subtotal = 0;
+    public $tax = 0;
+    public $total = 0;
     public $search = '';
     public $searchResults = [];
     protected $listeners = ['itemAdded' => 'handleItemAdded'];
@@ -114,7 +116,7 @@ class CashierSales extends Component
 
     public function cancelEdit()
     {
-        $this->reset(['isEditing', 'saleId', 'customer_id', 'payment_method', 'payment_type', 'payment_currency', 'status', 'saleItems', 'total_amount', 'search', 'searchResults']);
+        $this->reset(['isEditing', 'saleId', 'customer_id', 'payment_method', 'payment_type', 'payment_currency', 'status', 'saleItems', 'subtotal', 'tax', 'total', 'search', 'searchResults']);
     }
 
     public function removeItem($index)
@@ -131,14 +133,19 @@ class CashierSales extends Component
 
     public function recalculateTotals()
     {
-        $this->total_amount = 0;
+        $this->subtotal = 0;
         foreach ($this->saleItems as $index => $item) {
             $quantity = is_numeric($item['quantity']) ? $item['quantity'] : 0;
             $price = is_numeric($item['price']) ? $item['price'] : 0;
-            $subtotal = $quantity * $price;
-            $this->saleItems[$index]['subtotal'] = $subtotal;
-            $this->total_amount += $subtotal;
+            $itemSubtotal = $quantity * $price;
+            $this->saleItems[$index]['subtotal'] = $itemSubtotal;
+            $this->subtotal += $itemSubtotal;
         }
+
+        $company = auth()->user()->company;
+        $taxRate = $company && $company->tax_rate ? ($company->tax_rate / 100) : 0;
+        $this->tax = $this->subtotal * $taxRate;
+        $this->total = $this->subtotal + $this->tax;
     }
 
     public function updateSale()
@@ -150,50 +157,81 @@ class CashierSales extends Component
             'saleItems' => 'required|array|min:1',
         ]);
 
-        DB::transaction(function () {
-            $sale = Sale::findOrFail($this->saleId);
-            $originalStatus = $sale->status;
+        try {
+            DB::transaction(function () {
+                $sale = Sale::with('saleItems')->findOrFail($this->saleId);
+                $originalStatus = $sale->status;
+                $originalItems = $sale->saleItems;
 
-            $sale->update([
-                'customer_id' => $this->customer_id,
-                'payment_method' => $this->payment_method,
-                'payment_type' => $this->payment_type,
-                'payment_currency' => $this->payment_currency,
-                'status' => $this->status,
-                'total_usd' => $this->total_amount,
-            ]);
+                // 1. Revert stock if sale was previously completed
+                if ($originalStatus === 'completed') {
+                    foreach ($originalItems as $item) {
+                        $product = Product::find($item->product_id);
+                        if ($product) {
+                            $product->increment('current_stock', $item->quantity);
+                             InventoryMovement::where('reference_id', $sale->id)->where('product_id', $item->product_id)->delete();
+                        }
+                    }
+                }
 
-            // Sync sale items
-            $sale->saleItems()->delete();
-            foreach ($this->saleItems as $item) {
-                SaleItem::create([
-                    'sale_id' => $sale->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['price'],
-                    'subtotal_usd' => $item['subtotal'],
+                // Recalculate totals before updating
+                $this->recalculateTotals();
+
+                $sale->update([
+                    'customer_id' => $this->customer_id,
+                    'payment_method' => $this->payment_method,
+                    'payment_type' => $this->payment_type,
+                    'payment_currency' => $this->payment_currency,
+                    'status' => $this->status,
+                    'subtotal_usd' => $this->subtotal,
+                    'tax' => $this->tax,
+                    'total_usd' => $this->total,
                 ]);
-            }
 
-            // Inventory management
-            if ($this->status === 'completed' && $originalStatus !== 'completed') {
+                // Sync sale items
+                $sale->saleItems()->delete();
                 foreach ($this->saleItems as $item) {
-                    $product = Product::find($item['product_id']);
-                    $product->decrement('current_stock', $item['quantity']);
-
-                    InventoryMovement::create([
+                    SaleItem::create([
+                        'sale_id' => $sale->id,
                         'product_id' => $item['product_id'],
-                        'type' => 'sale',
-                        'quantity' => -$item['quantity'],
-                        'user_id' => auth()->id(),
-                        'reference_id' => $sale->id,
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['price'],
+                        'subtotal_usd' => $item['subtotal'],
                     ]);
                 }
-            }
-        });
 
-        session()->flash('message', 'Venta actualizada con éxito.');
-        $this->cancelEdit();
+                // 2. Apply new stock changes if sale is now completed
+                if ($this->status === 'completed') {
+                    foreach ($this->saleItems as $item) {
+                        $product = Product::find($item['product_id']);
+                        if ($product) {
+                            if ($product->current_stock < $item['quantity']) {
+                                throw new \Exception('Stock insuficiente para el producto: ' . $product->name);
+                            }
+                            $product->decrement('current_stock', $item['quantity']);
+
+                            InventoryMovement::create([
+                                'product_id' => $item['product_id'],
+                                'type' => 'sale',
+                                'quantity' => -$item['quantity'],
+                                'user_id' => auth()->id(),
+                                'reference_id' => $sale->id,
+                            ]);
+                        } else {
+                            throw new \Exception('Producto no encontrado con ID: ' . $item['product_id']);
+                        }
+                    }
+                }
+            });
+
+            session()->flash('message', 'Venta actualizada con éxito.');
+            $this->cancelEdit();
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error al actualizar la venta: ' . $e->getMessage());
+            // Optionally, re-read data from DB to revert optimistic UI updates
+            $this->editSale($this->saleId);
+        }
     }
 
     public function printTicket()

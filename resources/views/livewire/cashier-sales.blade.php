@@ -10,6 +10,9 @@
                 @if(session()->has('message'))
                     <div class="alert alert-success">{{ session('message') }}</div>
                 @endif
+                @if(session()->has('error'))
+                    <div class="alert alert-danger">{{ session('error') }}</div>
+                @endif
 
                 @if ($isEditing)
                     <div>
@@ -111,8 +114,16 @@
                             </tbody>
                             <tfoot>
                                 <tr>
+                                    <td colspan="3" class="text-right"><strong>Subtotal:</strong></td>
+                                    <td colspan="2"><strong>{{ number_format($subtotal, 2) }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-right"><strong>Impuestos (IVA):</strong></td>
+                                    <td colspan="2"><strong>{{ number_format($tax, 2) }}</strong></td>
+                                </tr>
+                                <tr>
                                     <td colspan="3" class="text-right"><strong>Total:</strong></td>
-                                    <td colspan="2"><strong>{{ number_format($total_amount, 2) }}</strong></td>
+                                    <td colspan="2"><strong>{{ number_format($total, 2) }}</strong></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -130,6 +141,7 @@
                                 <tr>
                                     <th>ID Venta</th>
                                     <th>Cliente</th>
+                                    <th>RIF/C.I.</th>
                                     <th>Vendedor</th>
                                     <th>Total</th>
                                     <th>Fecha</th>
@@ -141,6 +153,7 @@
                                     <tr>
                                         <td>{{ $sale->id }}</td>
                                         <td>{{ $sale->customer->name ?? 'N/A' }}</td>
+                                        <td>{{ $sale->customer->document_type."-".$sale->customer->document ?? 'N/A' }}</td>
                                         <td>{{ $sale->user->name ?? 'N/A' }}</td>
                                         <td>{{ number_format($sale->total_usd, 2) }} $ </td>
                                         <td>{{ $sale->created_at->format('d/m/Y H:i') }}</td>
