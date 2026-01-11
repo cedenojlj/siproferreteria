@@ -80,8 +80,7 @@
                                     <th style="width: 150px;">Cantidad a Devolver</th>
                                     <th>Cantidad Comprada</th>
                                     <th>Precio Unitario</th>
-                                    <th>Subtotal</th>
-                                    <th>Condiciones</th>
+                                    <th>Subtotal</th>                                    
                                 </tr>
                             </thead>
                             <tbody>
@@ -96,18 +95,7 @@
                                         </td>
                                         <td>{{ $item['max_quantity'] }}</td>
                                         <td>${{ number_format($item['unit_price'], 2) }}</td>
-                                        <td>${{ number_format($item['subtotal'], 2) }}</td>
-                                        <td>
-                                            <select
-                                                class="form-control @error('refundItems.' . $index . '.condition') is-invalid @enderror"
-                                                wire:model.live="refundItems.{{ $index }}.condition">
-                                                <option value="">Seleccione</option>
-                                                <option value="new">Nuevo</option>
-                                                <option value="used">Usado</option>
-                                                <option value="damaged">Dañado</option>
-                                                <option value="defective">Defectuoso</option>
-                                            </select>
-                                        </td>
+                                        <td>${{ number_format($item['subtotal'], 2) }}</td>                                        
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -172,7 +160,7 @@
                                     <td>{{ $refund->id }}</td>
                                     <td>{{ $refund->sale_id }}</td>
                                     <td>{{ $refund->customer->name ?? 'N/A' }}</td>
-                                    <td>${{ number_format($refund->total_amount, 2) }}</td>
+                                    <td>${{ number_format($refund->total_amount_usd, 2) }}</td>
                                     <td>{{ $refund->reason }}</td>
                                     <td>{{ $refund->created_at->format('d/m/Y') }}</td>
                                     <td>

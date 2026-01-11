@@ -68,8 +68,7 @@ class RefundCrud extends Component
 
         $this->exchange_rate = $venta ? $venta->exchange_rate : 1;
 
-        $this->tax_porcentage = $venta ? $venta->tax_percentage : 0;
-
+        $this->tax_porcentage = $venta ? $venta->tax_porcentaje/100 : 0;        
 
         if ($this->selectedSale) {
             foreach ($this->selectedSale->saleItems as $item) {
@@ -143,8 +142,7 @@ class RefundCrud extends Component
             //dame el tax_porcentage de la venta
             // de string a double   
 
-            $tax_percentage = ($this->tax_porcentage / 100);            
-
+            
             foreach ($itemsToReturn as $item) {
                 RefundItem::create([
                     'refund_id' => $refund->id,
@@ -153,7 +151,7 @@ class RefundCrud extends Component
                     'quantity' => $item['quantity'],
                     'unit_price_usd' => $item['unit_price'],
                     'subtotal_usd' => $item['subtotal'],
-                    'tax_usd' =>  $tax_percentage,                    
+                    'tax_usd' =>  $item['subtotal']*$this->tax_porcentage,                    
                     'item_condition' => 'damaged',
 
                 ]);
