@@ -111,4 +111,5 @@ Route::middleware(['auth', 'web'])->group(function () {
 
     Route::get('/sales/{sale}/ticket', [TicketController::class, 'generateTicket'])->name('sales.ticket');
     Route::get('/tickets/cashier/{sale}', [TicketController::class, 'showSaleTicketForCashier'])->name('tickets.cashier');
+    Route::get('/refunds/{refund}/pdf', [ReportController::class, 'printRefund'])->name('refund.pdf');
 });

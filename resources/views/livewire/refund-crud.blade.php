@@ -164,7 +164,7 @@
                                     <td>{{ $refund->reason }}</td>
                                     <td>{{ $refund->created_at->format('d/m/Y') }}</td>
                                     <td>
-                                        <button class="btn btn-info btn-sm">Ver</button>
+                                        <button class="btn btn-info btn-sm" wire:click="showViewModal({{ $refund->id }})">Ver</button>
                                     </td>
                                 </tr>
                             @empty
@@ -178,5 +178,61 @@
                 {{ $refunds->links() }}
             </div>
         </div>
+
+        <!-- View Refund Modal -->
+        @if ($viewModalOpen && $viewRefund)
+            <div class="modal fade show" style="display: block;" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Detalles de la Devolución #{{ $viewRefund->id }}</h5>                            
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Cliente:</strong> {{ $viewRefund->customer->name ?? 'N/A' }}</p>
+                                    <p><strong>Fecha:</strong> {{ $viewRefund->created_at->format('d/m/Y') }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Venta Original:</strong> #{{ $viewRefund->sale_id }}</p>
+                                    <p><strong>Atendido por:</strong> {{ $viewRefund->user->name ?? 'N/A' }}</p>
+                                </div>
+                            </div>
+                            <p><strong>Motivo:</strong> {{ $viewRefund->reason }}</p>
+
+                            <h6 class="mt-4">Productos Devueltos</h6>
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio Unitario</th>
+                                        <th>Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($viewRefund->refundItems as $item)
+                                        <tr>
+                                            <td>{{ $item->product->name }}</td>
+                                            <td>{{ $item->quantity }}</td>
+                                            <td>${{ number_format($item->unit_price_usd, 2) }}</td>
+                                            <td>${{ number_format($item->subtotal_usd, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                            <div class="text-right">
+                                <h5>Total Devuelto: <strong>${{ number_format($viewRefund->total_amount_usd, 2) }}</strong></h5>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" wire:click="closeViewModal">Cerrar</button>
+                            <a href="{{ route('refund.pdf', $viewRefund->id) }}" target="_blank" class="btn btn-primary">Imprimir PDF</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-backdrop fade show"></div>
+        @endif
     </div>
 </div>

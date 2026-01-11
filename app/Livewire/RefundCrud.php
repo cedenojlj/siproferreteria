@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-
 class RefundCrud extends Component
 {
     use WithPagination;
@@ -34,6 +33,8 @@ class RefundCrud extends Component
     // Control properties
     public $isModalOpen = false;
     public $search = ''; // For the refunds list
+    public $viewModalOpen = false;
+    public ?Refund $viewRefund = null;
 
     protected $rules = [
         'selectedSale' => 'required',
@@ -182,6 +183,18 @@ class RefundCrud extends Component
 
         session()->flash('message', 'Devolución creada con éxito.');
         $this->resetForm();
+    }
+
+    public function showViewModal($refundId)
+    {
+        $this->viewRefund = Refund::with(['customer', 'user', 'sale', 'refundItems.product'])->find($refundId);
+        $this->viewModalOpen = true;
+    }
+
+    public function closeViewModal()
+    {
+        $this->viewModalOpen = false;
+        $this->viewRefund = null;
     }
 
     public function resetForm()

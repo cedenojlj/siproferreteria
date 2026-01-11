@@ -10,6 +10,7 @@ use App\Models\InventoryMovement;
 use App\Services\ThermalPrinterService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use App\Models\Refund;
 
 use Carbon\Carbon;
 
@@ -179,5 +180,14 @@ class ReportController extends Controller
         ]);
 
         return $pdf->download('reporte-productos-mas-vendidos-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function printRefund(Refund $refund)
+    {
+        $refund->load(['customer', 'user', 'sale', 'refundItems.product']);
+        
+        $pdf = Pdf::loadView('pdfs.refund', compact('refund'));
+
+        return $pdf->stream('refund-' . $refund->id . '.pdf');
     }
 }
