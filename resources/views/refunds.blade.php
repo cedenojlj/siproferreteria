@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard')
+@section('title', 'Devoluciones')
 
 @section('header')
     @include('partials.header')
@@ -12,11 +12,6 @@
 
 @section('content')
     <div class="container-fluid mt-4">
-        <h1 class="mb-4">Devoluciones</h1>
-        <div class="row">
-            <livewire:refund-crud />
-        </div>
-
-        
+        <livewire:refund-crud />
     </div>
 @endsection

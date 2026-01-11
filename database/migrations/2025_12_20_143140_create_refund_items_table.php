@@ -19,15 +19,12 @@ return new class extends Migration
             $table->integer('quantity');
             $table->decimal('unit_price_usd', 12, 2);
             $table->decimal('subtotal_usd', 12, 2);
-            $table->decimal('tax_local', 12, 2)->default(0.00);
-            $table->text('reason')->nullable();
-            $table->enum('item_condition', ['new', 'used', 'damaged', 'defective'])->default('new');
-            $table->boolean('restocked')->default(false);
-            $table->timestamp('restocked_at')->nullable();
+            $table->decimal('tax_usd', 12, 2)->default(0.00);            
+            $table->enum('item_condition', ['new', 'used', 'damaged', 'defective'])->default('new');            
             $table->timestamps();
 
             $table->index(['refund_id', 'product_id']);
-            $table->index('restocked');
+    
         });
     }
 

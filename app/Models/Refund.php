@@ -16,11 +16,9 @@ class Refund extends Model
         'sale_id',
         'customer_id',
         'user_id',
-        'total_amount_usd',
-        'tax_returned_local',
+        'total_amount_usd',       
         'status',
-        'refund_method',
-        'credit_note_number',
+        'refund_method',        
         'reason',
     ];
 

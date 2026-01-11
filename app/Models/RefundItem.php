@@ -18,19 +18,14 @@ class RefundItem extends Model
         'quantity',
         'unit_price_usd',
         'subtotal_usd',
-        'tax_local',
-        'reason',
-        'item_condition',
-        'restocked',
-        'restocked_at',
+        'tax_usd',      
+        'item_condition',        
     ];
 
     protected $casts = [
         'unit_price_usd' => 'decimal:2',
-        'subtotal_usd' => 'decimal:2',
-        'tax_local' => 'decimal:2',
-        'restocked' => 'boolean',
-        'restocked_at' => 'datetime',
+        'subtotal_usd' => 'decimal:2', 
+        'tax_usd' => 'decimal:2',       
     ];
 
     public function refund(): BelongsTo

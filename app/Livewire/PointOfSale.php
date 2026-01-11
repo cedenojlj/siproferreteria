@@ -27,6 +27,8 @@ class PointOfSale extends Component
     public $subtotal = 0;
     public $tax = 0;
     public $total = 0;
+    public $impuesto=0;
+
 
     public $quantity = 1; // Default quantity for adding product
 
@@ -244,6 +246,7 @@ class PointOfSale extends Component
         // extrae la tax_rate de la compañia autenticada
         $company = Auth::user()->company;
         $taxRate = $company->tax_rate / 100; // Convert to decimal
+        $this->impuesto=$taxRate;
 
         //dd($taxRate);
         // Assuming a fixed tax rate for now, e.g., 16%
@@ -280,7 +283,8 @@ class PointOfSale extends Component
                 'payment_type' => $this->payment_type,
                 'exchange_rate' => $this->exchange_rate,                
                 'subtotal_usd' => $this->subtotal,
-                'tax' => $this->tax,                
+                'tax' => $this->tax,
+                'tax_porcentaje' => $this->impuesto * 100,                
                 'total_usd' => $this->total,
                 'pending_balance' => $this->total,
                 'status' => 'pending',

@@ -1,158 +1,194 @@
+<div>
+    <div class="container-fluid">
+        <h1 class="h3 mb-4 text-gray-800">Gestión de Devoluciones</h1>
 
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Gestión de Devoluciones</h2>
-        {{-- Direct creation not allowed, so no create button --}}
-    </div>
+        @if (session()->has('message'))
+            <div class="alert alert-success">{{ session('message') }}</div>
+        @endif
+        @if (session()->has('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
 
-    @if (session()->has('message'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        {{ session('message') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    @endif
-
-    @if (session()->has('info'))
-    <div class="alert alert-info alert-dismissible fade show" role="alert">
-        {{ session('info') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    @endif
-
-    @if (session()->has('error'))
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        {{ session('error') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    @endif
-
-    <div class="mb-3">
-        <input type="text" class="form-control" placeholder="Buscar devoluciones por estado, motivo, venta o cliente..." wire:model.live="search">
-    </div>
-
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th>ID</th>
-                    <th>Venta Ref.</th>
-                    <th>Cliente</th>
-                    <th>Usuario</th>
-                    <th>Monto Total (USD)</th>
-                    <th>Estado</th>
-                    <th>Método</th>
-                    <th>Fecha</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($refunds as $refund)
-                <tr>
-                    <td>{{ $refund->id }}</td>
-                    <td>{{ $refund->sale->invoice_number ?? 'N/A' }}</td>
-                    <td>{{ $refund->customer->name ?? 'N/A' }}</td>
-                    <td>{{ $refund->user->name ?? 'N/A' }}</td>
-                    <td>{{ number_format($refund->total_amount_usd, 2) }} USD</td>
-                    <td><span class="badge {{
-                        $refund->status == 'completed' ? 'bg-success' :
-                        ($refund->status == 'approved' ? 'bg-primary' :
-                        ($refund->status == 'rejected' ? 'bg-danger' :
-                        ($refund->status == 'cancelled' ? 'bg-secondary' : 'bg-warning text-dark')))
-                    }}">{{ $refund->status }}</span></td>
-                    <td>{{ $refund->refund_method }}</td>
-                    <td>{{ $refund->created_at->format('Y-m-d H:i') }}</td>
-                    <td>
-                        <button wire:click="edit({{ $refund->id }})" class="btn btn-sm btn-primary">Ver/Editar</button>
-                        {{-- Delete button is intentionally absent/disabled from CRUD logic --}}
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="9" class="text-center">No hay devoluciones registradas.</td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    <div class="d-flex justify-content-center">
-        {{ $refunds->links('pagination::bootstrap-5') }}
-    </div>
-
-    <!-- Modal de Edición/Detalles de Devolución -->
-    @if($isModalOpen)
-    <div class="modal d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Detalles de Devolución #{{ $refund_id }}</h5>
-                    <button type="button" class="btn-close" wire:click="closeModal" aria-label="Close"></button>
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Crear Nueva Devolución</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="saleSearch">Buscar Venta por ID o Número de Factura</label>
+                            <div class="input-group">
+                                <input type="text" id="saleSearch" class="form-control"
+                                    placeholder="Ingrese ID de la venta..." wire:model.defer="saleSearch">
+                                <div class="input-group-append">
+                                    <button class="btn btn-primary" wire:click="searchSale">Buscar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <form wire:submit.prevent="update">
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="sale_invoice_number" class="form-label">Venta Referencia:</label>
-                                <input type="text" class="form-control" id="sale_invoice_number" value="{{ \App\Models\Sale::find($sale_id)->invoice_number ?? 'N/A' }}" disabled>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="customer_name" class="form-label">Cliente:</label>
-                                <input type="text" class="form-control" id="customer_name" value="{{ \App\Models\Customer::find($customer_id)->name ?? 'N/A' }}" disabled>
+
+                @if ($selectedSale)
+                    <hr>
+                    <h5 class="mb-3">Detalles de la Venta #{{ $selectedSale->id }}</h5>
+                    <p><strong>Cliente:</strong> {{ $selectedSale->customer->name ?? 'N/A' }}</p>
+                    <p><strong>Fecha de Venta:</strong> {{ $selectedSale->created_at->format('d/m/Y') }}</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="refund_method">Método de Devolución</label>
+                                <select id="refund_method"
+                                    class="form-control @error('refund_method') is-invalid @enderror"
+                                    wire:model.defer="refund_method">
+                                    <option value="cash">Efectivo</option>
+                                    <option value="credit_note">Nota de Crédito</option>
+                                    <option value="exchange">Intercambio</option>
+                                    <option value="bank_transfer">Transferencia Bancaria</option>
+                                </select>
+                                @error('refund_method')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="user_name" class="form-label">Usuario:</label>
-                                <input type="text" class="form-control" id="user_name" value="{{ \App\Models\User::find($user_id)->name ?? 'N/A' }}" disabled>
+                        <div class="col-md-6">                           
+                            <div class="form-group">
+                                <label for="status">Estado</label>
+                                <select id="status" class="form-control @error('status') is-invalid @enderror"
+                                    wire:model.defer="status">
+                                    <option value="pending">Pendiente</option>
+                                    <option value="completed">Completado</option>
+                                    <option value="cancelled">Cancelado</option>
+                                </select>
+                                @error('status')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="total_amount_usd" class="form-label">Monto Total (USD):</label>
-                                <input type="text" class="form-control" id="total_amount_usd" value="{{ number_format($total_amount_usd, 2) }}" disabled>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="tax_returned_local" class="form-label">Impuesto Devuelto (Local):</label>
-                                <input type="text" class="form-control" id="tax_returned_local" value="{{ number_format($tax_returned_local, 2) }}" disabled>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="refund_method" class="form-label">Método de Devolución:</label>
-                                <input type="text" class="form-control text-capitalize" id="refund_method" value="{{ $refund_method }}" disabled>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="credit_note_number" class="form-label">Número Nota de Crédito:</label>
-                                <input type="text" class="form-control" id="credit_note_number" value="{{ $credit_note_number ?? 'N/A' }}" disabled>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="status" class="form-label">Estado:</label>
-                            <select class="form-select @error('status') is-invalid @enderror" id="status" wire:model="status">
-                                <option value="pending">Pendiente</option>
-                                <option value="approved">Aprobada</option>
-                                <option value="rejected">Rechazada</option>
-                                <option value="completed">Completada</option>
-                                <option value="cancelled">Cancelada</option>
-                            </select>
-                            @error('status') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="reason" class="form-label">Razón:</label>
-                            <textarea class="form-control @error('reason') is-invalid @enderror" id="reason" rows="3" wire:model="reason"></textarea>
-                            @error('reason') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" wire:click="closeModal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Actualizar</button>
+
+
+                    <hr>
+
+                    <h6 class="mt-4">Productos a Devolver</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th style="width: 150px;">Cantidad a Devolver</th>
+                                    <th>Cantidad Comprada</th>
+                                    <th>Precio Unitario</th>
+                                    <th>Subtotal</th>
+                                    <th>Condiciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($refundItems as $index => $item)
+                                    <tr>
+                                        <td>{{ $item['product_name'] }}</td>
+                                        <td>
+                                            <input type="number"
+                                                class="form-control @error('refundItems.' . $index . '.quantity') is-invalid @enderror"
+                                                wire:model.live="refundItems.{{ $index }}.quantity"
+                                                min="0" max="{{ $item['max_quantity'] }}">
+                                        </td>
+                                        <td>{{ $item['max_quantity'] }}</td>
+                                        <td>${{ number_format($item['unit_price'], 2) }}</td>
+                                        <td>${{ number_format($item['subtotal'], 2) }}</td>
+                                        <td>
+                                            <select
+                                                class="form-control @error('refundItems.' . $index . '.condition') is-invalid @enderror"
+                                                wire:model.live="refundItems.{{ $index }}.condition">
+                                                <option value="">Seleccione</option>
+                                                <option value="new">Nuevo</option>
+                                                <option value="used">Usado</option>
+                                                <option value="damaged">Dañado</option>
+                                                <option value="defective">Defectuoso</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
-                </form>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="reason">Motivo de la Devolución</label>
+                                <textarea id="reason" class="form-control @error('reason') is-invalid @enderror" wire:model.defer="reason"
+                                    rows="3"></textarea>
+                                @error('reason')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-right">
+                            <h4 class="mt-4">Total a Devolver:
+                                <strong>${{ number_format($total_amount, 2) }}</strong>
+                            </h4>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button class="btn btn-success" wire:click="store" wire:loading.attr="disabled">
+                            <span wire:loading.remove>Guardar Devolución</span>
+                            <span wire:loading>Procesando...</span>
+                        </button>
+                        <button class="btn btn-secondary" wire:click="resetForm">Cancelar</button>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Listado de devoluciones existentes -->
+        <div class="card shadow mt-5">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Historial de Devoluciones</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" placeholder="Buscar por ID de devolución o cliente..."
+                        wire:model.live="search">
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ID Devolución</th>
+                                <th>ID Venta</th>
+                                <th>Cliente</th>
+                                <th>Total Devuelto</th>
+                                <th>Motivo</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($refunds as $refund)
+                                <tr>
+                                    <td>{{ $refund->id }}</td>
+                                    <td>{{ $refund->sale_id }}</td>
+                                    <td>{{ $refund->customer->name ?? 'N/A' }}</td>
+                                    <td>${{ number_format($refund->total_amount, 2) }}</td>
+                                    <td>{{ $refund->reason }}</td>
+                                    <td>{{ $refund->created_at->format('d/m/Y') }}</td>
+                                    <td>
+                                        <button class="btn btn-info btn-sm">Ver</button>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="text-center">No se han encontrado devoluciones.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                {{ $refunds->links() }}
             </div>
         </div>
     </div>
-    @endif
 </div>
-

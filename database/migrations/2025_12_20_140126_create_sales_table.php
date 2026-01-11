@@ -23,7 +23,8 @@ return new class extends Migration
             $table->enum('payment_type', ['EFECTIVO', 'CREDITO'])->default('EFECTIVO');
             $table->decimal('exchange_rate', 10, 4);            
             $table->decimal('subtotal_usd', 12, 2)->default(0.00);
-            $table->decimal('tax', 12, 2);            
+            $table->decimal('tax', 12, 2); 
+            $table->decimal('tax_porcentaje', 12, 2)->default(16.00);           
             $table->decimal('total_usd', 12, 2)->default(0.00);
             $table->decimal('pending_balance', 12, 2)->default(0.00);
             $table->enum('status', ['pending', 'completed', 'cancelled', 'credit'])->default('pending');
