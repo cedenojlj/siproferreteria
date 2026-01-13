@@ -26,7 +26,7 @@
             </div>
             <!-- Ventas del Mes -->
             <div class="col-md-6 col-lg-3 mb-4">
-                <div class="card bg-success text-white shadow">
+                <div class="card bg-info text-white shadow">
                     <div class="card-body">
                         <h5 class="card-title">Ventas del Mes</h5>
                         <h2 class="display-4">$ {{ number_format($kpis['ventasMes'] ?? 0, 2) }}</h2>
@@ -36,21 +36,27 @@
             </div>
             <!-- Total Clientes -->
             <div class="col-md-6 col-lg-3 mb-4">
-                <div class="card bg-warning text-dark shadow">
-                    <div class="card-body">
-                        <h5 class="card-title">Total de Clientes</h5>
-                        <h2 class="display-4">{{ $kpis['numClientes'] ?? 0 }}</h2>
-                        <p class="card-text">Clientes registrados</p>
+                <div class="card bg-success text-white shadow">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Total de Clientes</h5>
+                            <h2 class="display-4">{{ $kpis['numClientes'] ?? 0 }}</h2>
+                            <p class="card-text mb-0">Clientes registrados</p>
+                        </div>
+                        <i class="fas fa-users fa-3x" style="opacity: 0.5;"></i>
                     </div>
                 </div>
             </div>
             <!-- Total Productos -->
             <div class="col-md-6 col-lg-3 mb-4">
-                <div class="card bg-info text-white shadow">
-                    <div class="card-body">
-                        <h5 class="card-title">Total de Productos</h5>
-                        <h2 class="display-4">{{ $kpis['numProductos'] ?? 0 }}</h2>
-                        <p class="card-text">Productos en inventario</p>
+                <div class="card bg-danger text-white shadow">
+                     <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Total de Productos</h5>
+                            <h2 class="display-4">{{ $kpis['numProductos'] ?? 0 }}</h2>
+                            <p class="card-text mb-0">Productos en inventario</p>
+                        </div>
+                        <i class="fas fa-box-open fa-3x" style="opacity: 0.5;"></i>
                     </div>
                 </div>
             </div>
