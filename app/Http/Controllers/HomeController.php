@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use Carbon\Carbon;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\Request;
@@ -50,15 +51,24 @@ class HomeController extends Controller
 
             $chartLabels = [];
             $chartData = [];
-            // Rellenar los últimos 7 días para asegurar que haya datos aunque no hubiera ventas
             for ($i = 6; $i >= 0; $i--) {
                 $date = Carbon::now()->subDays($i);
                 $formattedDate = $date->format('Y-m-d');
                 $saleOnDate = $salesData->firstWhere('sale_date', $formattedDate);
-
-                $chartLabels[] = $date->isoFormat('ddd D'); // Formato "lun. 1"
+                $chartLabels[] = $date->isoFormat('ddd D');
                 $chartData[] = $saleOnDate ? $saleOnDate->total : 0;
             }
+
+            // Top 5 productos más vendidos
+            $topSellingProducts = SaleItem::select(
+                'product_id',
+                DB::raw('SUM(quantity) as total_quantity')
+            )
+                ->with('product:id,name,current_stock')
+                ->groupBy('product_id')
+                ->orderByDesc('total_quantity')
+                ->limit(5)
+                ->get();
 
             return [
                 'ventasHoy' => $ventasHoy,
@@ -70,6 +80,7 @@ class HomeController extends Controller
                     'labels' => $chartLabels,
                     'data' => $chartData,
                 ],
+                'topSellingProducts' => $topSellingProducts,
             ];
         });
 
