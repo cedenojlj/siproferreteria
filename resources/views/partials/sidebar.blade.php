@@ -1,6 +1,6 @@
 <ul class="nav flex-column">
     <li class="nav-item">
-        <a class="nav-link text-white active" aria-current="page" href="/dashboard">
+        <a class="nav-link text-white active" aria-current="page" href="{{ route('home') }}">
             <i class="bi bi-speedometer2"></i> Dashboard
         </a>
     </li>
