@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Sale;
 use App\Models\Customer;
 use App\Models\User;
+use App\Models\ExchangeRate;
 
 class PaymentCrud extends Component
 {
@@ -22,10 +23,22 @@ class PaymentCrud extends Component
     public $isModalOpen = false;
     public $search = '';
 
-    // Data for dropdowns (for display in modal)
+    // Data for dropdowns
     public $sales = [];
     public $customers = [];
     public $users = [];
+
+    // --- Estado para el Módulo de Abonos ---
+    public $selectedCustomerId = null;
+    public $creditSales = [];
+    public $selectedSaleId = null;
+    public ?Sale $selectedSale = null;
+
+    // --- Formulario de Nuevo Abono ---
+    public $new_payment_amount = 0;
+    public $new_payment_method = 'CASH'; // Coincidir con los enums de la BD
+    public $new_payment_reference = '';
+
 
     protected $rules = [
         'reference' => 'nullable|string|max:100',
@@ -35,9 +48,9 @@ class PaymentCrud extends Component
     public function mount()
     {
         $company_id = Auth::user()->company_id;
-        $this->sales = Sale::where('company_id', $company_id)->get(['id', 'invoice_number']);
+        // $this->sales = Sale::where('company_id', $company_id)->get(['id', 'invoice_number']); // De-scoped for now
         $this->customers = Customer::where('company_id', $company_id)->get(['id', 'name']);
-        $this->users = User::where('company_id', $company_id)->get(['id', 'name']);
+        // $this->users = User::where('company_id', $company_id)->get(['id', 'name']); // De-scoped for now
     }
 
     public function render()
@@ -66,10 +79,74 @@ class PaymentCrud extends Component
         ]);
     }
 
-    // Direct creation is not supported for payments
+    // --- Módulo de Abonos ---
+    public function updatedSelectedCustomerId($customerId)
+    {
+        if ($customerId) {
+            $this->creditSales = Sale::where('company_id', Auth::user()->company_id)
+                ->where('customer_id', $customerId)
+                ->where('status', 'credit')
+                ->where('pending_balance', '>', 0)
+                ->get();
+        }
+        $this->reset(['selectedSaleId', 'selectedSale', 'new_payment_amount', 'new_payment_reference']);
+    }
+
+    public function updatedSelectedSaleId($saleId)
+    {
+        if ($saleId) {
+            $this->selectedSale = Sale::find($saleId);
+        }
+        $this->reset(['new_payment_amount', 'new_payment_reference']);
+    }
+
+    public function addPayment()
+    {
+        if (!$this->selectedSale) return;
+
+        // 1. Validar
+        $this->validate([
+            'new_payment_amount' => 'required|numeric|min:0.01|max:' . $this->selectedSale->pending_balance,
+            'new_payment_method' => 'required|string',
+            'new_payment_reference' => 'nullable|string|max:100',
+        ]);
+
+        // Asumiendo que el abono se registra en USD
+        $amountUsd = $this->new_payment_amount;
+        $exchangeRate = ExchangeRate::latest()->first()->rate ?? 1;
+        $amountLocal = $amountUsd * $exchangeRate;
+
+        // 2. Registrar el pago
+        Payment::create([
+            'sale_id' => $this->selectedSale->id,
+            'customer_id' => $this->selectedSale->customer_id,
+            'user_id' => Auth::id(),
+            'company_id' => Auth::user()->company_id,
+            'amount_usd' => $amountUsd,
+            'amount_local' => $amountLocal,
+            'payment_method' => $this->new_payment_method,
+            'reference' => $this->new_payment_reference,
+            'notes' => 'Abono a factura ' . $this->selectedSale->invoice_number,
+        ]);
+
+        // 3. Actualizar la venta
+        $this->selectedSale->pending_balance -= $amountUsd;
+        if ($this->selectedSale->pending_balance <= 0) {
+            $this->selectedSale->pending_balance = 0;
+            $this->selectedSale->status = 'completed';
+        }
+        $this->selectedSale->save();
+
+        // 4. Refrescar y notificar
+        session()->flash('message', 'Abono registrado exitosamente.');
+        $this->updatedSelectedCustomerId($this->selectedCustomerId);
+    }
+
+
+    // --- Métodos de CRUD originales (edit-only) ---
     public function create()
     {
-        session()->flash('info', 'Los pagos no se pueden crear directamente desde aquí. Son generados por ventas u otros procesos financieros.');
+        session()->flash('info', 'Utilice el módulo de "Registro de Abonos" para agregar pagos a ventas a crédito.');
         $this->closeModal();
     }
 
@@ -93,7 +170,6 @@ class PaymentCrud extends Component
         ]);
     }
 
-    // Store is not supported
     public function store()
     {
         session()->flash('error', 'La creación directa de pagos no está permitida.');
@@ -123,7 +199,10 @@ class PaymentCrud extends Component
     public function update()
     {
         $company_id = Auth::user()->company_id;
-        $this->validate(); // Only validates reference and notes as per rules
+        $this->validate([
+            'reference' => 'nullable|string|max:100',
+            'notes' => 'nullable|string',
+        ]);
 
         if ($this->payment_id) {
             $payment = Payment::where('company_id', $company_id)->findOrFail($this->payment_id);
