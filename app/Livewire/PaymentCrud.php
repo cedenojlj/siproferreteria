@@ -22,10 +22,11 @@ class PaymentCrud extends Component
     // Control properties
     public $isModalOpen = false;
     public $search = '';
+    public $customerSearch = '';
 
     // Data for dropdowns
     public $sales = [];
-    public $customers = [];
+    // public $customers = []; // Se cargará dinámicamente
     public $users = [];
 
     // --- Estado para el Módulo de Abonos ---
@@ -47,15 +48,21 @@ class PaymentCrud extends Component
 
     public function mount()
     {
-        $company_id = Auth::user()->company_id;
-        // $this->sales = Sale::where('company_id', $company_id)->get(['id', 'invoice_number']); // De-scoped for now
-        $this->customers = Customer::where('company_id', $company_id)->get(['id', 'name']);
-        // $this->users = User::where('company_id', $company_id)->get(['id', 'name']); // De-scoped for now
+        // El mount se mantiene ligero, las cargas dinámicas van en render
     }
 
     public function render()
     {
         $company_id = Auth::user()->company_id;
+
+        // Búsqueda de clientes para el dropdown
+        $customers = Customer::where('company_id', $company_id)
+            ->search($this->customerSearch)
+            ->orderBy('name')
+            ->limit(25)
+            ->get(['id', 'name', 'document']);
+
+        // Búsqueda principal de la tabla de pagos
         $payments = Payment::where('company_id', $company_id)
             ->with(['sale', 'customer', 'user'])
             ->where(function($query) {
@@ -65,7 +72,7 @@ class PaymentCrud extends Component
                           $q->where('invoice_number', 'like', '%' . $this->search . '%');
                       })
                       ->orWhereHas('customer', function($q) {
-                          $q->where('name', 'like', '%' . $this->search . '%');
+                          $q->search($this->search);
                       })
                       ->orWhereHas('user', function($q) {
                           $q->where('name', 'like', '%' . $this->search . '%');
@@ -75,6 +82,7 @@ class PaymentCrud extends Component
             ->paginate(10);
 
         return view('livewire.payment-crud', [
+            'customers' => $customers,
             'payments' => $payments
         ]);
     }

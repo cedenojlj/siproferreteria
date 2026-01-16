@@ -59,4 +59,19 @@ class Customer extends Model
     {
         return $this->hasMany(Payment::class);
     }
+
+    /**
+     * Scope a query to only include customers matching a given search term.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $term
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeSearch($query, $term)
+    {
+        return $query->where(function ($query) use ($term) {
+            $query->where('name', 'like', '%' . $term . '%')
+                  ->orWhere('document', 'like', '%' . $term . '%');
+        });
+    }
 }
