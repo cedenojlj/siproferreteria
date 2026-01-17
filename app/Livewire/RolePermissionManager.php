@@ -6,6 +6,8 @@ use Livewire\Component;
 use App\Models\Role;
 use App\Models\Permission;
 use App\Models\User;
+use Illuminate\Support\Str;
+
 
 class RolePermissionManager extends Component
 {
@@ -43,7 +45,8 @@ class RolePermissionManager extends Component
     {
         $this->authorize('manage_roles');
         $this->validate(['role_name' => 'required|unique:roles,name']);
-        Role::create(['name' => $this->role_name]);
+        Role::create(['name' => $this->role_name,
+        'slug' => Str::slug($this->role_name)]);
         session()->flash('success', 'Rol creado con éxito.');
         $this->reset(['role_name', 'role_id']);
         $this->closeModal();
@@ -82,7 +85,8 @@ class RolePermissionManager extends Component
     {
         $this->authorize('manage_roles');
         $this->validate(['permission_name' => 'required|unique:permissions,name']);
-        Permission::create(['name' => $this->permission_name]);
+        Permission::create(['name' => $this->permission_name,
+        'slug' => Str::slug($this->permission_name)]);
         session()->flash('success', 'Permiso creado con éxito.');
         $this->reset(['permission_name', 'permission_id']);
         $this->closeModal();

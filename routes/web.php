@@ -105,9 +105,14 @@ Route::middleware(['auth', 'web'])->group(function () {
     })->name('compras');     
 
 
-    Route::get('/management/roles-permissions', \App\Livewire\RolePermissionManager::class)
-        ->middleware('can:manage_roles')
-        ->name('roles.permissions.manager');
+    // Route::get('/management/roles-permissions', \App\Livewire\RolePermissionManager::class)
+    //     ->middleware('can:manage_roles')
+    //     ->name('roles.permissions.manager');
+
+    Route::get('/management/roles-permissions', function () {
+        return view('roles_permisos_vista');
+    })->middleware('can:manage_roles')->name('roles.permissions.manager');     
+
 
     Route::get('/sales/{sale}/ticket', [TicketController::class, 'generateTicket'])->name('sales.ticket');
     Route::get('/tickets/cashier/{sale}', [TicketController::class, 'showSaleTicketForCashier'])->name('tickets.cashier');

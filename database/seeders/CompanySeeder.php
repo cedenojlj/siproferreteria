@@ -37,7 +37,7 @@ class CompanySeeder extends Seeder
         DB::table('exchange_rates')->insert([
             [
                 'company_id' => $company->id,
-                'rate' => 35.7500,
+                'rate' => 344.5071,
                 'source' => 'BCV',
                 'is_active' => true,
                 'created_at' => now(),
@@ -128,6 +128,8 @@ class CompanySeeder extends Seeder
             ['name' => 'Editar ventas', 'slug' => 'sales.edit'],
             ['name' => 'Eliminar ventas', 'slug' => 'sales.delete'],
             ['name' => 'Imprimir tickets', 'slug' => 'sales.print'],
+            ['name' => 'POS', 'slug' => 'sales.pos'],
+            ['name' => 'Caja', 'slug' => 'sales.caja'],
             
             // Productos
             ['name' => 'Crear productos', 'slug' => 'products.create'],
@@ -139,20 +141,34 @@ class CompanySeeder extends Seeder
             ['name' => 'Crear compras', 'slug' => 'purchases.create'],
             ['name' => 'Ver compras', 'slug' => 'purchases.view'],
             ['name' => 'Editar compras', 'slug' => 'purchases.edit'],
+            ['name' => 'Eliminar compras', 'slug' => 'purchases.delete'],
             
             // Inventario
-            ['name' => 'Ver inventario', 'slug' => 'inventory.view'],
-            ['name' => 'Ajustar inventario', 'slug' => 'inventory.adjust'],
+            ['name' => 'Ver inventario', 'slug' => 'inventory.view'],            
             ['name' => 'Ver movimientos', 'slug' => 'inventory.movements'],
+            
+            // Devoluciones
+            ['name' => 'Crear devoluciones', 'slug' => 'inventory.returns.create'],
+            ['name' => 'Ver devoluciones', 'slug' => 'inventory.returns.view'],
+
+            //Pagos
+            ['name' => 'Crear pagos', 'slug' => 'payments.create'],
+            ['name' => 'Ver pagos', 'slug' => 'payments.view'],
+            ['name' => 'Editar pagos', 'slug' => 'payments.edit'],
+            ['name' => 'Eliminar pagos', 'slug' => 'payments.delete'],
+
             
             // Clientes
             ['name' => 'Crear clientes', 'slug' => 'customers.create'],
             ['name' => 'Ver clientes', 'slug' => 'customers.view'],
             ['name' => 'Editar clientes', 'slug' => 'customers.edit'],
+            ['name' => 'Eliminar clientes', 'slug' => 'customers.delete'],
             
             // Proveedores
             ['name' => 'Crear proveedores', 'slug' => 'suppliers.create'],
             ['name' => 'Ver proveedores', 'slug' => 'suppliers.view'],
+            ['name' => 'Editar proveedores', 'slug' => 'suppliers.edit'],
+            ['name' => 'Eliminar proveedores', 'slug' => 'suppliers.delete'],
             
             // Reportes
             ['name' => 'Ver reportes de ventas', 'slug' => 'reports.sales'],
@@ -164,6 +180,10 @@ class CompanySeeder extends Seeder
             ['name' => 'Gestionar usuarios', 'slug' => 'users.manage'],
             ['name' => 'Gestionar roles', 'slug' => 'roles.manage'],
             ['name' => 'Configurar empresa', 'slug' => 'company.configure'],
+            ['name' => 'Configurar tasas de cambio', 'slug' => 'exchange-rates.configure'],
+            ['name' => 'Configurar permisos', 'slug' => 'permissions.configure'],
+            ['name' => 'Configurar categorías', 'slug' => 'categories.configure'],
+            ['name' => 'Configurar unidades de medida', 'slug' => 'unit-measures.configure'],            
         ];
 
         foreach ($permissions as $permission) {
