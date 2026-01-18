@@ -123,67 +123,68 @@ class CompanySeeder extends Seeder
         // Crear permisos básicos
         $permissions = [
             // Ventas
-            ['name' => 'Crear ventas', 'slug' => 'sales.create'],
-            ['name' => 'Ver ventas', 'slug' => 'sales.view'],
-            ['name' => 'Editar ventas', 'slug' => 'sales.edit'],
-            ['name' => 'Eliminar ventas', 'slug' => 'sales.delete'],
-            ['name' => 'Imprimir tickets', 'slug' => 'sales.print'],
+            ['name' => 'Crear_ventas', 'slug' => 'sales.create'],
+            ['name' => 'Ver_ventas', 'slug' => 'sales.view'],
+            ['name' => 'Editar_ventas', 'slug' => 'sales.edit'],
+            ['name' => 'Eliminar_ventas', 'slug' => 'sales.delete'],
+            ['name' => 'Imprimir_tickets', 'slug' => 'sales.print'],
             ['name' => 'POS', 'slug' => 'sales.pos'],
             ['name' => 'Caja', 'slug' => 'sales.caja'],
             
             // Productos
-            ['name' => 'Crear productos', 'slug' => 'products.create'],
-            ['name' => 'Ver productos', 'slug' => 'products.view'],
-            ['name' => 'Editar productos', 'slug' => 'products.edit'],
-            ['name' => 'Eliminar productos', 'slug' => 'products.delete'],
-            
+            ['name' => 'Crear_productos', 'slug' => 'products.create'],
+            ['name' => 'Ver_productos', 'slug' => 'products.view'],
+            ['name' => 'Editar_productos', 'slug' => 'products.edit'],
+            ['name' => 'Eliminar_productos', 'slug' => 'products.delete'],
+
             // Compras
-            ['name' => 'Crear compras', 'slug' => 'purchases.create'],
-            ['name' => 'Ver compras', 'slug' => 'purchases.view'],
-            ['name' => 'Editar compras', 'slug' => 'purchases.edit'],
-            ['name' => 'Eliminar compras', 'slug' => 'purchases.delete'],
+            ['name' => 'Crear_compras', 'slug' => 'purchases.create'],
+            ['name' => 'Ver_compras', 'slug' => 'purchases.view'],
+            ['name' => 'Editar_compras', 'slug' => 'purchases.edit'],
+            ['name' => 'Eliminar_compras', 'slug' => 'purchases.delete'],
             
             // Inventario
-            ['name' => 'Ver inventario', 'slug' => 'inventory.view'],            
-            ['name' => 'Ver movimientos', 'slug' => 'inventory.movements'],
+            ['name' => 'Ver_inventario', 'slug' => 'inventory.view'],            
+            ['name' => 'Ver_movimientos', 'slug' => 'inventory.movements'],
             
             // Devoluciones
-            ['name' => 'Crear devoluciones', 'slug' => 'inventory.returns.create'],
-            ['name' => 'Ver devoluciones', 'slug' => 'inventory.returns.view'],
+            ['name' => 'Crear_devoluciones', 'slug' => 'inventory.returns.create'],
+            ['name' => 'Ver_devoluciones', 'slug' => 'inventory.returns.view'],
 
             //Pagos
-            ['name' => 'Crear pagos', 'slug' => 'payments.create'],
-            ['name' => 'Ver pagos', 'slug' => 'payments.view'],
-            ['name' => 'Editar pagos', 'slug' => 'payments.edit'],
-            ['name' => 'Eliminar pagos', 'slug' => 'payments.delete'],
+            ['name' => 'Crear_pagos', 'slug' => 'payments.create'],
+            ['name' => 'Ver_pagos', 'slug' => 'payments.view'],
+            ['name' => 'Editar_pagos', 'slug' => 'payments.edit'],
+            ['name' => 'Eliminar_pagos', 'slug' => 'payments.delete'],
 
             
             // Clientes
-            ['name' => 'Crear clientes', 'slug' => 'customers.create'],
-            ['name' => 'Ver clientes', 'slug' => 'customers.view'],
-            ['name' => 'Editar clientes', 'slug' => 'customers.edit'],
-            ['name' => 'Eliminar clientes', 'slug' => 'customers.delete'],
+            ['name' => 'Crear_clientes', 'slug' => 'customers.create'],
+            ['name' => 'Ver_clientes', 'slug' => 'customers.view'],
+            ['name' => 'Editar_clientes', 'slug' => 'customers.edit'],
+            ['name' => 'Eliminar_clientes', 'slug' => 'customers.delete'],
             
             // Proveedores
-            ['name' => 'Crear proveedores', 'slug' => 'suppliers.create'],
-            ['name' => 'Ver proveedores', 'slug' => 'suppliers.view'],
-            ['name' => 'Editar proveedores', 'slug' => 'suppliers.edit'],
-            ['name' => 'Eliminar proveedores', 'slug' => 'suppliers.delete'],
+            ['name' => 'Crear_proveedores', 'slug' => 'suppliers.create'],
+            ['name' => 'Ver_proveedores', 'slug' => 'suppliers.view'],
+            ['name' => 'Editar_proveedores', 'slug' => 'suppliers.edit'],
+            ['name' => 'Eliminar_proveedores', 'slug' => 'suppliers.delete'],
             
             // Reportes
-            ['name' => 'Ver reportes de ventas', 'slug' => 'reports.sales'],
-            ['name' => 'Ver reportes de compras', 'slug' => 'reports.purchases'],
-            ['name' => 'Ver reportes de inventario', 'slug' => 'reports.inventory'],
-            ['name' => 'Ver reportes de productos', 'slug' => 'reports.products'],
+            ['name' => 'Ver_reportes_de_ventas', 'slug' => 'reports.sales'],
+            ['name' => 'Ver_reportes_de_compras', 'slug' => 'reports.purchases'],
+            ['name' => 'Ver_reportes_de_inventario', 'slug' => 'reports.inventory'],
+            ['name' => 'Ver_reportes_de_productos', 'slug' => 'reports.products'],
+            ['name' => 'Ver_reportes_general', 'slug' => 'reports.general'],
             
             // Configuración
-            ['name' => 'Gestionar usuarios', 'slug' => 'users.manage'],
-            ['name' => 'Gestionar roles', 'slug' => 'roles.manage'],
-            ['name' => 'Configurar empresa', 'slug' => 'company.configure'],
-            ['name' => 'Configurar tasas de cambio', 'slug' => 'exchange-rates.configure'],
-            ['name' => 'Configurar permisos', 'slug' => 'permissions.configure'],
-            ['name' => 'Configurar categorías', 'slug' => 'categories.configure'],
-            ['name' => 'Configurar unidades de medida', 'slug' => 'unit-measures.configure'],            
+            ['name' => 'Gestionar_usuarios', 'slug' => 'users.manage'],
+            ['name' => 'Gestionar_roles', 'slug' => 'roles.manage'],
+            ['name' => 'Configurar_empresa', 'slug' => 'company.configure'],
+            ['name' => 'Configurar_tasas_de_cambio', 'slug' => 'exchange-rates.configure'],
+            ['name' => 'Configurar_permisos', 'slug' => 'permissions.configure'],
+            ['name' => 'Configurar_categorías', 'slug' => 'categories.configure'],
+            ['name' => 'Configurar_unidades_de_medida', 'slug' => 'unit-measures.configure'],            
         ];
 
         foreach ($permissions as $permission) {
