@@ -19,6 +19,8 @@ class PaymentCrud extends Component
     public $payment_id, $sale_id, $customer_id, $amount_local, $amount_usd,
            $payment_method, $reference, $notes, $user_id;
 
+    public $sale, $customer;
+
     // Control properties
     public $isModalOpen = false;
     public $search = '';
@@ -174,7 +176,7 @@ class PaymentCrud extends Component
     {
         $this->reset([
             'payment_id', 'sale_id', 'customer_id', 'amount_local', 'amount_usd',
-            'payment_method', 'reference', 'notes', 'user_id'
+            'payment_method', 'reference', 'notes', 'user_id', 'sale', 'customer'
         ]);
     }
 
@@ -200,6 +202,9 @@ class PaymentCrud extends Component
         $this->reference = $payment->reference;
         $this->notes = $payment->notes;
         $this->user_id = $payment->user_id;
+
+        $this->sale = $payment->sale;
+        $this->customer = $payment->customer;
 
         $this->openModal();
     }

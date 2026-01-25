@@ -159,4 +159,42 @@
             </div>
         </div>
     </div>
+
+    {{-- Modal para Editar Pago --}}
+    @if($isModalOpen)
+    <div class="modal fade show" tabindex="-1" style="display: block;" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ver/Editar Pago #{{ $payment_id }}</h5>
+                    <button type="button" class="btn-close" wire:click="closeModal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <p><strong>Cliente:</strong> {{ $customer->name ?? 'N/A' }}</p>
+                        <p><strong>Factura Ref.:</strong> {{ $sale->invoice_number ?? 'N/A' }}</p>
+                        <p><strong>Monto (USD):</strong> {{ number_format($amount_usd, 2) }}</p>
+                        <p><strong>Método de Pago:</strong> {{ $payment_method }}</p>
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <label for="reference" class="form-label">Referencia</label>
+                        <input type="text" id="reference" class="form-control @error('reference') is-invalid @enderror" wire:model="reference">
+                        @error('reference') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notas Adicionales</label>
+                        <textarea id="notes" class="form-control @error('notes') is-invalid @enderror" wire:model="notes" rows="3"></textarea>
+                        @error('notes') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" wire:click="closeModal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" wire:click="update">Actualizar Pago</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+    @endif
 </div>
