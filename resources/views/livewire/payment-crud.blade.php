@@ -141,6 +141,10 @@
                                 <td>{{ $payment->created_at->format('Y-m-d H:i') }}</td>
                                 <td>
                                     <button wire:click="edit({{ $payment->id }})" class="btn btn-sm btn-primary">Ver/Editar</button>
+                                     <button wire:click="printReceipt({{ $payment->id }})" class="btn btn-sm btn-success" wire:loading.attr="disabled" wire:target="printReceipt({{ $payment->id }})">
+                                        <span wire:loading.remove wire:target="printReceipt({{ $payment->id }})">Imprimir Recibo</span>
+                                        <span wire:loading wire:target="printReceipt({{ $payment->id }})">Imprimiendo...</span>
+                                    </button>
                                     {{-- Delete button is intentionally absent/disabled from CRUD logic --}}
                                 </td>
                             </tr>

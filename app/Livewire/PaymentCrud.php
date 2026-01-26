@@ -10,6 +10,8 @@ use App\Models\Sale;
 use App\Models\Customer;
 use App\Models\User;
 use App\Models\ExchangeRate;
+use App\Models\Company;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PaymentCrud extends Component
 {
@@ -228,6 +230,32 @@ class PaymentCrud extends Component
             $this->closeModal();
             $this->resetInputFields();
         }
+    }
+
+    public function printReceipt($paymentId)
+    {
+        $company = Company::find(Auth::user()->company_id);
+        $payment = Payment::with(['sale', 'customer', 'user'])->find($paymentId);
+
+        if (!$payment || $payment->company_id != $company->id) {
+            session()->flash('error', 'Recibo no encontrado o no autorizado.');
+            return;
+        }
+
+        // Calcular saldo anterior
+        $saldoAnterior = ($payment->sale->pending_balance ?? 0) + $payment->amount_usd;
+
+        $data = [
+            'payment' => $payment,
+            'company' => $company,
+            'saldoAnterior' => $saldoAnterior
+        ];
+
+        $pdf = Pdf::loadView('pdfs.payment_receipt', $data);
+
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'recibo-pago-' . $paymentId . '.pdf');
     }
 
     public function delete($id)
