@@ -163,7 +163,7 @@ class ReportController extends Controller
         ->where('products.company_id', $user->company_id) // Filtrar por la compañía del usuario
         ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
             // Aplica el filtro de fecha si se proporcionan las fechas
-            return $query->whereBetween('sales.sale_date', [$startDate, $endDate]);
+            return $query->whereBetween('sales.created_at', [$startDate, $endDate]);
         })
         ->groupBy('products.id', 'products.name', 'products.barcode')
         ->orderBy('total_quantity_sold', 'desc')
