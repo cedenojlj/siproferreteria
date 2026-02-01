@@ -41,7 +41,12 @@
                 </form>
             </div>
             
-            {{-- Aquí puedes añadir más secciones para otros reportes --}}
+            {{-- Reporte de Cierre de Caja (Corte Z) --}}
+            <div class="report-section border-top mt-3 pt-3">
+                <h5 class="mb-3">Cierre de Caja Diario (Reporte Z)</h5>
+                <p>Genere el reporte de cierre para consolidar todas las transacciones desde el último corte hasta el momento actual. Esta acción registrará el cierre y permitirá la descarga de un comprobante.</p>
+                @livewire('reportes.cierre-caja')
+            </div>
 
         </div>
     </div>
