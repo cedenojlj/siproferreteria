@@ -316,8 +316,10 @@ class PointOfSale extends Component
             }
 
             // Asignar el ID de la venta para el botón de imprimir
-            $this->lastSaleId = $sale->id;
+           //$this->lastSaleId = $sale->id;
+            
             session()->flash('message', 'Venta finalizada exitosamente.');
+            $this->resetComponent();
 
         });
     }
@@ -408,7 +410,6 @@ class PointOfSale extends Component
 
         return $newInvoiceNumber;
     }
-
 
 
     public function render()

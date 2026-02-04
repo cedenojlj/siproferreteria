@@ -123,7 +123,12 @@
                                 </tr>
                                 <tr>
                                     <td colspan="3" class="text-right"><strong>Total:</strong></td>
-                                    <td colspan="2"><strong>{{ number_format($total, 2) }}</strong></td>
+                                    <td colspan="2"><strong>$ {{ number_format($total, 2) }}</strong></td>
+                                </tr>
+
+                                <tr>
+                                    <td colspan="3" class="text-right"><strong>Total:</strong></td>
+                                    <td colspan="2"><strong>Bs {{ number_format($total, 2) }}</strong></td>
                                 </tr>
                             </tfoot>
                         </table>

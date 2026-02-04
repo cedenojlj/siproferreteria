@@ -1,6 +1,15 @@
 <div>
     <div class="container-fluid mt-3">
         <div class="row">
+            <div class="col-12">
+                @if (session()->has('message'))
+                    <div class="alert alert-success">
+                        {{ session('message') }}
+                    </div>
+                @endif
+            </div>
+        </div>
+        <div class="row">
             <!-- Columna Izquierda (70%) -->
             <div class="col-md-7">
                 <div class="card shadow-sm mb-3">
@@ -8,8 +17,8 @@
                         <h5 class="mb-0">Búsqueda de Productos</h5>
                     </div>
                     <div class="card-body">
-                        <input type="text" id="productSearch" wire:model.live.debounce.300ms="productSearch" class="form-control"
-                            placeholder="Buscar producto por código o nombre...">
+                        <input type="text" id="productSearch" wire:model.live.debounce.300ms="productSearch"
+                            class="form-control" placeholder="Buscar producto por código o nombre...">
                         <!-- Product Search Results -->
                         @if (!empty($productSearch) && count($products) > 0)
                             <div class="list-group mt-2">
@@ -49,11 +58,13 @@
                                             <input type="number"
                                                 wire:model.live="saleItems.{{ $index }}.quantity"
                                                 wire:change="updateQuantity({{ $index }}, $event.target.value)"
-                                                wire:keydown.enter="updateQuantity({{ $index }}, $event.target.value)"                                                
+                                                wire:keydown.enter="updateQuantity({{ $index }}, $event.target.value)"
                                                 min="1" class="form-control form-control-sm">
                                         </td>
-                                        <td>{{ number_format($item['price'], 2) }}</td>
-                                        <td>{{ number_format(!empty($item['quantity']) ? ($item['quantity'] * $item['price']) : 0, 2) }}</td>
+                                        <td>$ {{ number_format($item['price'], 2) }}</td>
+                                        <td>$
+                                            {{ number_format(!empty($item['quantity']) ? $item['quantity'] * $item['price'] : 0, 2) }}
+                                        </td>
                                         <td>
                                             <button wire:click="removeItem({{ $index }})"
                                                 class="btn btn-danger btn-sm">X</button>
@@ -104,7 +115,7 @@
                                 {{-- agregar payment_type --}}
                                 <div class="col mb-3">
                                     <label for="payment_type" class="form-label">Tipo de Pago</label>
-                                    <select class="form-select" id="payment_type" wire:model="payment_type">
+                                    <select class="form-select" id="payment_type" wire:model="payment_type" readonly>
                                         @foreach ($paymentTypes as $type)
                                             <option value="{{ $type }}">{{ $type }}</option>
                                         @endforeach
@@ -112,7 +123,7 @@
                                 </div>
                                 {{-- tasa de cambio --}}
                                 <div class="col mb-3">
-                                    <label for="exchange_rate" class="form-label">Tasa de Cambio</label>
+                                    <label for="exchange_rate" class="form-label">Tasa de Cambio Bs/$</label>
                                     <input type="number" class="form-control" id="exchange_rate"
                                         wire:model.live="exchange_rate" step="0.01" min="0" readonly>
                                 </div>
@@ -192,7 +203,13 @@
                             <li
                                 class="list-group-item d-flex justify-content-between align-items-center font-weight-bold">
                                 Total
-                                <h4>{{ number_format($total, 2) }}</h4>
+                                <h4>$ {{ number_format($total, 2) }}</h4>
+                            </li>
+
+                            <li
+                                class="list-group-item d-flex justify-content-between align-items-center font-weight-bold">
+                                Total
+                                <h4>Bs {{ number_format($total * $exchange_rate, 2) }}</h4>
                             </li>
                         </ul>
                     </div>
@@ -229,7 +246,7 @@
                     </div>
                     <div class="modal-footer d-flex justify-content-center">
                         <a href="{{ route('sales.ticket', $lastSaleId) }}" target="_blank" class="btn btn-primary">
-                             Ver / Imprimir Ticket
+                            Ver / Imprimir Ticket
                         </a>
                         <button wire:click="startNewSale" class="btn btn-secondary">
                             Nueva Venta
@@ -310,12 +327,12 @@
         document.addEventListener('livewire:initialized', () => {
             // Listener for product search focus
             Livewire.on('focus-product-search', () => {
-               let input = document.getElementById('productSearch');
-               if (input) {
-                   input.focus();
-                   input.select();
-               }
-           });
+                let input = document.getElementById('productSearch');
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            });
 
             // Modal related logic
             const customerModalEl = document.getElementById('customerModal');
