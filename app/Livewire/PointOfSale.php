@@ -43,6 +43,8 @@ class PointOfSale extends Component
     public $paymentMethods=['EFECTIVO', 'DEBITO','TRANSFERENCIA', 'PAGO_MOVIL', 'ZELLE', 'BANESCO_PANAMA', 'OTRO']; 
     public $paymentTypes=['EFECTIVO', 'CREDITO'];
 
+    public $viapago;
+
     // New customer properties
     public $newCustomer = [
         'name' => '',
@@ -204,6 +206,23 @@ class PointOfSale extends Component
         $this->dispatch('focus-product-search');
     }
 
+    //crear funcion para actualizar el precio del producto del carrito segun la moneda seleccionada
+    public function mostrarTipoOperacion()
+    {
+       // dd($this->payment_currency);
+    
+         foreach ($this->saleItems as $index => $item) {
+            $product = Product::find($item['product_id']);
+            if ($this->payment_currency == 'BS') {
+                $item['price'] = $product->base_price;
+            } else {
+                $item['price'] = $product->usd_price;
+            }
+        }
+        $this->calculateTotals();
+    }
+   
+
     public function updateQuantity($index, $quantity)
     {
        //valida que la cantidad sea un numero y que sea mayor a 0
@@ -258,7 +277,7 @@ class PointOfSale extends Component
 
     public function finalizeSale()
     {
-          
+          $this->mostrarTipoOperacion();
         
         if (!$this->selectedCustomer) {
             session()->flash('error', 'Debe seleccionar un cliente para finalizar la venta.');
@@ -302,17 +321,6 @@ class PointOfSale extends Component
                     'unit_price' => $item['price'],                    
                     'subtotal_usd' => $item['quantity'] * $item['price'],
                 ]);
-
-                // Update product stock and record inventory movement
-                $product = Product::find($item['product_id']);
-                $this->recordInventoryMovement(
-                    $product,
-                    Auth::id(),
-                    'out', // Movement type for sale
-                    $item['quantity'],
-                    $sale->id,
-                    Sale::class
-                );
             }
 
             // Asignar el ID de la venta para el botón de imprimir

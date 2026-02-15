@@ -104,8 +104,8 @@
                                     <tr>
                                         <td>{{ $item['name'] }}</td>
                                         <td><input type="number" class="form-control" wire:model.live="saleItems.{{ $index }}.quantity"></td>
-                                        <td>{{ number_format($item['price'], 2) }}</td>
-                                        <td>{{ number_format($item['subtotal'], 2) }}</td>
+                                        <td>$ {{ number_format($item['price'], 2) }}</td>
+                                        <td>$ {{ number_format($item['subtotal'], 2) }}</td>
                                         <td>
                                             <button class="btn btn-danger btn-sm" wire:click="removeItem({{ $index }})">Eliminar</button>
                                         </td>
@@ -115,11 +115,11 @@
                             <tfoot>
                                 <tr>
                                     <td colspan="3" class="text-right"><strong>Subtotal:</strong></td>
-                                    <td colspan="2"><strong>{{ number_format($subtotal, 2) }}</strong></td>
+                                    <td colspan="2"><strong>$ {{ number_format($subtotal, 2) }}</strong></td>
                                 </tr>
                                 <tr>
                                     <td colspan="3" class="text-right"><strong>Impuestos (IVA):</strong></td>
-                                    <td colspan="2"><strong>{{ number_format($tax, 2) }}</strong></td>
+                                    <td colspan="2"><strong>$ {{ number_format($tax, 2) }}</strong></td>
                                 </tr>
                                 <tr>
                                     <td colspan="3" class="text-right"><strong>Total:</strong></td>
@@ -128,7 +128,7 @@
 
                                 <tr>
                                     <td colspan="3" class="text-right"><strong>Total:</strong></td>
-                                    <td colspan="2"><strong>Bs {{ number_format($total, 2) }}</strong></td>
+                                    <td colspan="2"><strong>Bs {{ number_format($total * $tasaBsDolar, 2) }}</strong></td>
                                 </tr>
                             </tfoot>
                         </table>

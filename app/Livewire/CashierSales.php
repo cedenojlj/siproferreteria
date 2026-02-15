@@ -26,6 +26,7 @@ class CashierSales extends Component
     public $searchPending = ''; // Para buscar en ventas pendientes
     public $searchResults = [];
     protected $listeners = ['itemAdded' => 'handleItemAdded'];
+    public $tasaBsDolar; // Variable para la tasa de cambio bs/dólar
 
 
     public function render()
@@ -106,6 +107,7 @@ class CashierSales extends Component
     public function editSale($saleId)
     {
         $sale = Sale::with('saleItems.product')->findOrFail($saleId);
+        $this->tasaBsDolar = $sale->exchange_rate; // Asignar la tasa de cambio de la venta
         $this->saleId = $sale->id;
         $this->customer_id = $sale->customer_id;
         $this->payment_method = $sale->payment_method;
