@@ -46,7 +46,7 @@
                             <div class="col-md-3">
                                 <div class="form-group">
                                     <label>Moneda de Pago</label>
-                                    <select wire:model="payment_currency" class="form-control">
+                                    <select wire:model.live="payment_currency" class="form-control">
                                         <option value="BS">Bolívares (BS)</option>
                                         <option value="USD">Dólares (USD)</option>                                        
                                     </select>

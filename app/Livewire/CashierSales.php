@@ -276,4 +276,40 @@ class CashierSales extends Component
 
         session()->flash('message', 'Venta pendiente eliminada con éxito.');
     }
+
+
+    //crear funcion para actualizar el precio del producto del carrito segun la moneda seleccionada
+    public function updatedPaymentCurrency()
+    {
+       // dd($this->payment_currency);
+    
+         foreach ($this->saleItems as &$item) {
+            $product = Product::find($item['product_id']);
+            if ($this->payment_currency == 'BS') {
+                $item['price'] = $product->base_price;
+            } else {
+                $item['price'] = $product->usd_price;
+            }
+        }
+        $this->calculateTotals();
+
+        // $this->recalculateTotals();
+    }
+
+     private function calculateTotals()
+    {
+        $this->subtotal = 0;
+        foreach ($this->saleItems as $index => $item) {
+            $quantity = is_numeric($item['quantity']) ? $item['quantity'] : 0;
+            $price = is_numeric($item['price']) ? $item['price'] : 0;
+            $itemSubtotal = $quantity * $price;
+            $this->saleItems[$index]['subtotal'] = $itemSubtotal;
+            $this->subtotal += $itemSubtotal;
+        }
+
+        $company = auth()->user()->company;
+        $taxRate = $company && $company->tax_rate ? ($company->tax_rate / 100) : 0;
+        $this->tax = $this->subtotal * $taxRate;
+        $this->total = $this->subtotal + $this->tax;
+    }
 }
