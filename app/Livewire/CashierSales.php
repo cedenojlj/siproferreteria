@@ -230,6 +230,8 @@ class CashierSales extends Component
                                 'quantity' => -$item['quantity'],
                                 'user_id' => auth()->id(),
                                 'reference_id' => $sale->id,
+                                'company_id' => auth()->user()->company_id,
+                                'exchange_rate' => $sale->exchange_rate,
                             ]);
                         } else {
                             throw new \Exception('Producto no encontrado con ID: ' . $item['product_id']);
