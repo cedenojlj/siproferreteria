@@ -207,11 +207,11 @@ class PointOfSale extends Component
     }
 
     //crear funcion para actualizar el precio del producto del carrito segun la moneda seleccionada
-    public function mostrarTipoOperacion()
+    public function updatedPaymentCurrency()
     {
        // dd($this->payment_currency);
     
-         foreach ($this->saleItems as $index => $item) {
+         foreach ($this->saleItems as &$item) {
             $product = Product::find($item['product_id']);
             if ($this->payment_currency == 'BS') {
                 $item['price'] = $product->base_price;
@@ -277,7 +277,6 @@ class PointOfSale extends Component
 
     public function finalizeSale()
     {
-          $this->mostrarTipoOperacion();
         
         if (!$this->selectedCustomer) {
             session()->flash('error', 'Debe seleccionar un cliente para finalizar la venta.');

@@ -95,7 +95,7 @@
                                 {{-- agregar payment_currency --}}
                                 <div class="col mb-3">
                                     <label for="payment_currency" class="form-label">Moneda de Pago</label>
-                                    <select class="form-select" id="payment_currency" wire:model="payment_currency">
+                                    <select class="form-select" id="payment_currency" wire:model.live="payment_currency">
                                         @foreach ($paymentCurrency as $currency)
                                             <option value="{{ $currency }}">{{ $currency }}</option>
                                         @endforeach
