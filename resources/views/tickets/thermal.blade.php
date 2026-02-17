@@ -99,7 +99,7 @@
                 <tr>
                     <td>{{ rtrim(rtrim(number_format($item->quantity, 2), '0'), '.') }}</td>
                     <td>{{ $item->product->name }}</td>
-                    <td class="text-right">{{ number_format($item->quantity * $item->unit_price, 2) }}</td>
+                    <td class="text-right">{{ number_format($item->quantity * $item->unit_price*$sale->exchange_rate, 2) }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -111,16 +111,20 @@
             <tbody>
                 <tr>
                     <td>SUBTOTAL:</td>
-                    <td class="text-right">{{ number_format($sale->subtotal_usd, 2) }}</td>
+                    <td class="text-right">{{ number_format($sale->subtotal_usd*$sale->exchange_rate, 2) }}</td>
                 </tr>
                 <tr>
                     <td>IVA:</td>
-                    <td class="text-right">{{ number_format($sale->tax, 2) }}</td>
+                    <td class="text-right">{{ number_format($sale->tax*$sale->exchange_rate, 2) }}</td>
                 </tr>
                 <tr>
-                    <td><strong>TOTAL:</strong></td>
-                    <td class="text-right"><strong>{{ number_format($sale->total_usd, 2) }}</strong></td>
+                    <td><strong>TOTAL BS:</strong></td>
+                    <td class="text-right"><strong>{{ number_format($sale->total_usd*$sale->exchange_rate, 2) }}</strong></td>
                 </tr>
+                    <tr>
+                        <td><strong>TOTAL USD:</strong></td>
+                        <td class="text-right"><strong>{{ number_format($sale->total_usd, 2) }}</strong></td>
+                    </tr>
             </tbody>
         </table>
 
